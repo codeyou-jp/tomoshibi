@@ -191,14 +191,16 @@ function App() {
               key={tab.key}
               style={styles.tabBtn}
               onPress={function() { setActiveTab(tab.key); }}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
               <Ionicons
                 name={isActive ? tab.icon : tab.iconOff}
-                size={24}
+                size={26}
                 color={isActive ? '#000000' : MUTED}
               />
-              {isActive && <View style={styles.tabDot} />}
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -216,11 +218,12 @@ var styles = StyleSheet.create({
     backgroundColor: TAB_BG,
     borderTopWidth: 0.5,
     borderTopColor: BORDER,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingTop: 8,
+    paddingBottom: 20,
   },
-  tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  tabDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#F97316' },
+  tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingVertical: 4 },
+  tabLabel: { fontSize: 10, color: MUTED, fontWeight: '500', marginTop: 1 },
+  tabLabelActive: { color: '#000000', fontWeight: '700' },
 });
 
 export default Sentry.wrap(App);
