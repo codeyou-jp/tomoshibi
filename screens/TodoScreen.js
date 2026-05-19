@@ -200,14 +200,21 @@ async function generateRoadmap(userData) {
 
 async function updateWithChat(userMsg, roadmap, chatHistory, userData) {
   var history = chatHistory.filter(function(m) { return m.role !== 'loading'; }).map(function(m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.text }; });
-  var sys = '現在のロードマップ：\n' + JSON.stringify(roadmap, null, 2) + '\nユーザーの夢: ' + (userData.dream || '') + '\n要望に応じてロードマップを更新。easy(3)・necessary(3)・advanced(4)を必ず含む。\nREPLY: [一言]\nJSON: [完全なJSON]';
-  var messages = [{ role: 'user', content: sys }].concat(history).concat([{ role: 'user', content: userMsg }]);
-  var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: messages, userData: {} }) });
+
+  // systemOverride でバックエンドのシステムプロンプトを上書きし、REPLY:/JSON: 形式を強制
+  var systemOverride = 'あなたはTodoリストを一緒に考えるAIアシスタントです。ユーザーの夢に寄り添いながら、ロードマップとTodoリストを更新します。\n\nユーザーの夢: ' + (userData.dream || '') + '\n\n現在のロードマップ：\n' + JSON.stringify(roadmap, null, 2) + '\n\n【返答ルール】\n- ユーザーの気持ちに共感し、フレンドリーな日本語で話す\n- 必ず以下のフォーマットで返すこと（他の形式は不可）:\n\nREPLY: （ユーザーへの一言。共感・励まし。1〜2文、絵文字1個まで）\nJSON: （ロードマップ全体のJSON。life/years10/years5/year1/months6/months3/month1/weeks2/week1/easy(3個)/necessary(3個)/advanced(4個)を必ず含む）\n\n※JSON以外の余計な説明は不要。フォーマット厳守。';
+
+  var messages = history.concat([{ role: 'user', content: userMsg }]);
+  var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: messages, userData: userData, systemOverride: systemOverride }) });
   var data = await res.json();
   var text = (data && data.text) || '';
   var replyMatch = text.match(/REPLY:\s*(.+?)(?=JSON:|$)/s);
   var jsonMatch = text.match(/JSON:\s*(\{[\s\S]*\})/);
-  var reply = replyMatch ? replyMatch[1].trim() : '更新したよ！';
+  var reply = replyMatch ? replyMatch[1].trim() : '';
+  // replyが空の場合はtextからJSONを除いた部分を使う
+  if (!reply && text) {
+    reply = text.replace(/JSON:\s*\{[\s\S]*\}/, '').replace(/REPLY:\s*/, '').trim().slice(0, 80) || 'ロードマップを更新したよ！';
+  }
   var newRoadmap = roadmap;
   if (jsonMatch) { try { newRoadmap = JSON.parse(jsonMatch[1]); } catch (e) {} }
   return { reply: reply, roadmap: newRoadmap };
