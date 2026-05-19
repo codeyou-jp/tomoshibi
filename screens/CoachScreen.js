@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COMMUNITY_USERS } from '../constants/data';
+import * as Sentry from '@sentry/react-native';
 
 var API_URL = 'https://cu-tomoshibi.vercel.app/api/chat';
 
@@ -93,6 +94,32 @@ export default function CoachScreen(props) {
     }, 120);
   }
 
+  function reportMessage(msgText, msgIndex) {
+    Alert.alert(
+      'メッセージを通報',
+      'このAIの返答が不適切だと思いましたか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '通報する',
+          style: 'destructive',
+          onPress: function() {
+            Sentry.captureMessage('AI content reported', {
+              level: 'warning',
+              tags: { type: 'user_report' },
+              extra: {
+                messageIndex: msgIndex,
+                messagePreview: msgText.slice(0, 100),
+                userDream: userData.dream || '',
+              },
+            });
+            Alert.alert('通報完了', 'ご報告ありがとうございます。内容を確認します。', [{ text: 'OK' }]);
+          }
+        }
+      ]
+    );
+  }
+
   async function send(text) {
     var msg = text || input.trim();
     if (!msg || loading) return;
@@ -153,14 +180,24 @@ export default function CoachScreen(props) {
 
         // Messages
         msgs.map(function(msg, i) {
-          return React.createElement(View, {
-            key: i,
-            style: msg.role === 'user' ? s.bubbleUser : s.bubbleBot
-          },
-            msg.role === 'bot' && React.createElement(Text, { style: s.botLabel }, '🤖 コーチ'),
-            msg.role === 'bot'
-              ? React.createElement(FormattedText, { text: msg.text, style: s.bubbleBotTxt })
-              : React.createElement(Text, { style: s.bubbleUserTxt }, msg.text)
+          if (msg.role === 'user') {
+            return React.createElement(View, { key: i, style: s.bubbleUser },
+              React.createElement(Text, { style: s.bubbleUserTxt }, msg.text)
+            );
+          }
+          return React.createElement(View, { key: i, style: s.botWrapper },
+            React.createElement(View, { style: s.bubbleBot },
+              React.createElement(Text, { style: s.botLabel }, '🤖 コーチ'),
+              React.createElement(FormattedText, { text: msg.text, style: s.bubbleBotTxt })
+            ),
+            React.createElement(TouchableOpacity, {
+              style: s.flagBtn,
+              onPress: function() { reportMessage(msg.text, i); },
+              activeOpacity: 0.6,
+            },
+              React.createElement(Ionicons, { name: 'flag-outline', size: 12, color: '#D1D5DB' }),
+              React.createElement(Text, { style: s.flagTxt }, '通報')
+            )
           );
         }),
 
@@ -244,4 +281,7 @@ var s = StyleSheet.create({
   input: { flex: 1, backgroundColor: '#F8F8F8', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: '#000000', fontSize: 16, maxHeight: 120, minHeight: 44 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F97316', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   sendOff: { opacity: 0.35 },
+  botWrapper: { alignSelf: 'flex-start', maxWidth: '90%', gap: 4 },
+  flagBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingLeft: 4, paddingVertical: 2 },
+  flagTxt: { fontSize: 10, color: '#D1D5DB' },
 });
