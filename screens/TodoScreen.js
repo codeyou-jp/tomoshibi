@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
   TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RANKS, RANK_TEST_QUESTIONS, getRankFromStreak } from '../constants/data';
 
 var API_URL = 'https://hi-backend.vercel.app/api/chat';
 
@@ -184,13 +185,38 @@ var FALLBACK = {
   advanced: ['新しいスキルを30分学ぶ', '夢に関係する人に連絡', '来週の計画を立てる', 'アイデアを文章にまとめる'],
 };
 
-async function generateRoadmap(userData) {
+async function generateRoadmap(userData, streak) {
   var dream = userData.dream || '';
   var isGoal = /\d+年|\d+ヶ月|\d+か月|\d+週|までに|以内|合格|受験|試験|資格|検定/.test(dream);
   var timeframeNote = userData.timeframe ? '達成期間: ' + userData.timeframe + '\n' : '';
+  var modeNote = userData.mode === 'busy' ? '忙しい（1タスク15〜30分以内）' : '余裕あり（1タスク1時間以内）';
+
+  // ランクに応じたTodo難易度ガイド
+  var currentRank = getRankFromStreak(streak || 0);
+  var rankGuide = {
+    novice:       '【初歩ランク】超初心者向け。5〜15分でできる最小の行動。まず習慣をつけることが最優先。',
+    basic:        '【基礎ランク】初級者向け。30分以内。基礎スキルを固める具体的な行動。',
+    intermediate: '【中級ランク】中級者向け。1時間程度。本格的で実践的な取り組み。',
+    advanced:     '【上級ランク】上級者向け。2時間程度。深い専門性が求められる挑戦的なタスク。',
+    expert:       '【応用ランク】プロレベル。実践・発信・教える立場になる行動。',
+  }[currentRank.key] || '';
+
+  var todoRules = [
+    rankGuide,
+    '【Todoの絶対ルール】',
+    '・今日1日で完了できる具体的な行動にすること',
+    '・「〇〇する」という動詞で終わる形にする（「〇〇の構築」「〇〇作り」はNG）',
+    '・抽象的な概念（人脈作り・スキル習得・能力構築など）は禁止',
+    '・easy: 毎日続けられるシンプルな習慣（例：「関連ニュースを1本読む」「今日の学びをメモする」）',
+    '・necessary: 具体的に取り組める行動（例：「YouTubeで〇〇の入門動画を1本見る」「〇〇について30分調べる」）',
+    '・advanced: 少し頑張れば今日できること（例：「〇〇についてノートにまとめる」「〇〇の無料体験に登録する」）',
+    '・モード: ' + modeNote,
+  ].join('\n');
+
   var prompt = isGoal
-    ? '以下は期限付きの目標です。逆算して現実的なロードマップと今日のTodoを生成してください。\n\n目標: ' + dream + '\n' + timeframeNote + '動機: ' + (userData.needs || '') + '\nロールモデル: ' + (userData.model ? userData.model.name : 'なし') + '\nモード: ' + (userData.mode === 'busy' ? '忙しい（短時間集中）' : '余裕あり') + '\n\n各項目は20文字以内。JSON以外不要。\n{"life":"〜","years10":"〜","years5":"〜","year1":"〜","months6":"〜","months3":"〜","month1":"〜","weeks2":"〜","week1":"〜","easy":["〜","〜","〜"],"necessary":["〜","〜","〜"],"advanced":["〜","〜","〜","〜"]}'
-    : '以下のユーザー情報をもとに夢を実現するためのロードマップと今日のTodoを生成してください。\n\n夢: ' + dream + '\n' + timeframeNote + '動機: ' + (userData.needs || '') + '\nロールモデル: ' + (userData.model ? userData.model.name : 'なし') + '\nモード: ' + (userData.mode === 'busy' ? '忙しい' : '余裕あり') + '\n\n各項目20文字以内。JSON以外不要。\n{"life":"〜","years10":"〜","years5":"〜","year1":"〜","months6":"〜","months3":"〜","month1":"〜","weeks2":"〜","week1":"〜","easy":["〜","〜","〜"],"necessary":["〜","〜","〜"],"advanced":["〜","〜","〜","〜"]}';
+    ? '以下は期限付きの目標です。逆算して現実的なロードマップと今日のTodoを生成してください。\n\n目標: ' + dream + '\n' + timeframeNote + '動機: ' + (userData.needs || '') + '\nロールモデル: ' + (userData.model ? userData.model.name : 'なし') + '\n\n' + todoRules + '\n\n各項目は20文字以内。JSON以外不要。\n{"life":"〜","years10":"〜","years5":"〜","year1":"〜","months6":"〜","months3":"〜","month1":"〜","weeks2":"〜","week1":"〜","easy":["〜","〜","〜"],"necessary":["〜","〜","〜"],"advanced":["〜","〜","〜","〜"]}'
+    : '以下のユーザー情報をもとに夢を実現するためのロードマップと今日のTodoを生成してください。\n\n夢: ' + dream + '\n' + timeframeNote + '動機: ' + (userData.needs || '') + '\nロールモデル: ' + (userData.model ? userData.model.name : 'なし') + '\n\n' + todoRules + '\n\n各項目20文字以内。JSON以外不要。\n{"life":"〜","years10":"〜","years5":"〜","year1":"〜","months6":"〜","months3":"〜","month1":"〜","weeks2":"〜","week1":"〜","easy":["〜","〜","〜"],"necessary":["〜","〜","〜"],"advanced":["〜","〜","〜","〜"]}';
+
   var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], userData: {} }) });
   var data = await res.json();
   var match = ((data && data.text) || '').match(/\{[\s\S]*\}/);
@@ -220,6 +246,192 @@ async function updateWithChat(userMsg, roadmap, chatHistory, userData) {
   return { reply: reply, roadmap: newRoadmap };
 }
 
+// ─── 段階突破試験モーダル ─────────────────────────────────────────────────────
+function BreakthroughTestModal({ visible, rankKey, streak, userData, onPass, onClose }) {
+  var [phase, setPhase] = useState('questions'); // questions | evaluating | pass | fail
+  var [currentQ, setCurrentQ] = useState(0);
+  var [answers, setAnswers] = useState(['', '', '']);
+  var [feedback, setFeedback] = useState('');
+  var slideAnim = useRef(new Animated.Value(800)).current;
+
+  var rank = RANKS.find(function(r) { return r.key === rankKey; }) || RANKS[0];
+  var nextRank = RANKS[RANKS.findIndex(function(r) { return r.key === rankKey; }) + 1];
+
+  var rawQs = RANK_TEST_QUESTIONS[rankKey] || RANK_TEST_QUESTIONS.novice;
+  var questions = rawQs.map(function(q) { return q.replace('{dream}', (userData && userData.dream) || '夢'); });
+
+  useEffect(function() {
+    if (visible) {
+      setPhase('questions');
+      setCurrentQ(0);
+      setAnswers(['', '', '']);
+      setFeedback('');
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 12 }).start();
+    } else {
+      Animated.timing(slideAnim, { toValue: 800, duration: 220, useNativeDriver: true }).start();
+    }
+  }, [visible]);
+
+  async function evaluate() {
+    setPhase('evaluating');
+    try {
+      var qa = questions.map(function(q, i) { return 'Q' + (i + 1) + ': ' + q + '\nA' + (i + 1) + ': ' + answers[i]; }).join('\n\n');
+      var prompt = '以下は段階突破試験の回答です。ユーザーが「' + rank.label + '」ランクから「' + (nextRank ? nextRank.label : '応用') + '」ランクに進む準備ができているか判定してください。\n\n夢: ' + (userData && userData.dream || '') + '\n\n' + qa + '\n\n【判定基準】回答が具体的で誠実であればPASS。短すぎたり「わからない」だけならFAIL。\n必ず「PASS: （一言）」または「FAIL: （一言アドバイス）」の形式で返してください。';
+      var res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], userData: {} }),
+      });
+      var data = await res.json();
+      var text = (data && data.text) || '';
+      if (text.includes('PASS')) {
+        var msg = text.replace(/PASS:\s*/i, '').trim();
+        setFeedback(msg);
+        setPhase('pass');
+      } else {
+        var msg = text.replace(/FAIL:\s*/i, '').trim();
+        setFeedback(msg || 'もう少し具体的に取り組んでみよう。また挑戦できるよ！');
+        setPhase('fail');
+      }
+    } catch (e) {
+      // エラー時はパスにする（ユーザー体験優先）
+      setFeedback('よく頑張った！次のステージへ進もう。');
+      setPhase('pass');
+    }
+  }
+
+  function handleAnswer(text) {
+    var next = answers.slice();
+    next[currentQ] = text;
+    setAnswers(next);
+  }
+
+  function handleNext() {
+    if (currentQ < 2) {
+      setCurrentQ(currentQ + 1);
+    } else {
+      evaluate();
+    }
+  }
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} animationType="none" transparent presentationStyle="overFullScreen">
+      <View style={bt.overlay}>
+        <TouchableOpacity style={bt.backdrop} activeOpacity={1} onPress={phase === 'pass' || phase === 'fail' ? onClose : undefined} />
+        <Animated.View style={[bt.sheet, { transform: [{ translateY: slideAnim }] }]}>
+          {/* Handle */}
+          <View style={bt.handle} />
+
+          {/* Header */}
+          <View style={[bt.rankBanner, { backgroundColor: rank.bg }]}>
+            <Text style={bt.rankBannerEmoji}>{rank.emoji}</Text>
+            <View>
+              <Text style={[bt.rankBannerLabel, { color: rank.color }]}>段階突破試験</Text>
+              <Text style={bt.rankBannerSub}>{rank.label} → {nextRank ? nextRank.label : '応用'}</Text>
+            </View>
+          </View>
+
+          {/* Content by phase */}
+          {phase === 'questions' && (
+            <View style={bt.body}>
+              <View style={bt.qProgress}>
+                {[0, 1, 2].map(function(i) {
+                  return <View key={i} style={[bt.qDot, i <= currentQ && { backgroundColor: rank.color }]} />;
+                })}
+                <Text style={bt.qNum}>問{currentQ + 1} / 3</Text>
+              </View>
+              <Text style={bt.question}>{questions[currentQ]}</Text>
+              <TextInput
+                style={bt.answerInput}
+                value={answers[currentQ]}
+                onChangeText={handleAnswer}
+                placeholder="正直に答えてみよう..."
+                placeholderTextColor="#A3A3A3"
+                multiline
+                numberOfLines={4}
+                autoFocus
+              />
+              <TouchableOpacity
+                style={[bt.nextBtn, { backgroundColor: rank.color }, answers[currentQ].trim().length < 10 && bt.nextBtnOff]}
+                onPress={handleNext}
+                disabled={answers[currentQ].trim().length < 10}
+              >
+                <Text style={bt.nextBtnTxt}>{currentQ < 2 ? '次の問題へ →' : '判定する'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {phase === 'evaluating' && (
+            <View style={[bt.body, bt.center]}>
+              <ActivityIndicator size="large" color={rank.color} />
+              <Text style={bt.evalTxt}>AIが判定中...</Text>
+            </View>
+          )}
+
+          {phase === 'pass' && (
+            <View style={[bt.body, bt.center]}>
+              <Text style={bt.resultEmoji}>{nextRank ? nextRank.emoji : '👑'}</Text>
+              <Text style={bt.resultTitle}>突破！</Text>
+              <Text style={[bt.resultRank, { color: nextRank ? nextRank.color : '#EAB308' }]}>
+                {nextRank ? nextRank.label : '応用'} ランク解放
+              </Text>
+              <Text style={bt.resultFeedback}>{feedback}</Text>
+              <TouchableOpacity style={[bt.nextBtn, { backgroundColor: nextRank ? nextRank.color : '#EAB308' }]} onPress={onPass}>
+                <Text style={bt.nextBtnTxt}>次のステージへ 🚀</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {phase === 'fail' && (
+            <View style={[bt.body, bt.center]}>
+              <Text style={bt.resultEmoji}>💪</Text>
+              <Text style={bt.resultTitle}>もう少し！</Text>
+              <Text style={bt.resultFeedback}>{feedback}</Text>
+              <Text style={bt.retryTxt}>明日また挑戦できるよ</Text>
+              <TouchableOpacity style={[bt.nextBtn, { backgroundColor: '#737373' }]} onPress={onClose}>
+                <Text style={bt.nextBtnTxt}>続ける</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+var bt = StyleSheet.create({
+  overlay:  { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
+  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  sheet:    { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 44 },
+  handle:   { width: 40, height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 0 },
+  rankBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 20, paddingTop: 16, borderBottomWidth: 0.5, borderBottomColor: '#F0F0F0' },
+  rankBannerEmoji: { fontSize: 32 },
+  rankBannerLabel: { fontSize: 16, fontWeight: '800', letterSpacing: -0.3 },
+  rankBannerSub:   { fontSize: 12, color: '#737373', marginTop: 2 },
+  body:     { padding: 20, gap: 16 },
+  center:   { alignItems: 'center', paddingVertical: 10 },
+  qProgress: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  qDot:     { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E0E0E0' },
+  qNum:     { fontSize: 11, color: '#A3A3A3', fontWeight: '600', marginLeft: 4 },
+  question: { fontSize: 16, fontWeight: '700', color: '#000', lineHeight: 24 },
+  answerInput: {
+    backgroundColor: '#F8F8F8', borderRadius: 14, padding: 16,
+    fontSize: 15, color: '#000', minHeight: 120,
+    textAlignVertical: 'top', borderWidth: 1, borderColor: '#F0F0F0',
+  },
+  nextBtn:    { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
+  nextBtnOff: { opacity: 0.3 },
+  nextBtnTxt: { fontSize: 16, fontWeight: '800', color: '#FFF' },
+  evalTxt:    { fontSize: 14, color: '#A3A3A3', marginTop: 16 },
+  resultEmoji: { fontSize: 64, marginBottom: 8 },
+  resultTitle: { fontSize: 28, fontWeight: '900', color: '#000', letterSpacing: -0.5 },
+  resultRank:  { fontSize: 18, fontWeight: '800', marginBottom: 8 },
+  resultFeedback: { fontSize: 14, color: '#737373', textAlign: 'center', lineHeight: 22, marginBottom: 12 },
+  retryTxt:    { fontSize: 12, color: '#A3A3A3', marginBottom: 16 },
+});
+
 // ─── 深夜リセットカウントダウン ───────────────────────────────────────────────
 function useResetCountdown() {
   var [label, setLabel] = useState('');
@@ -247,7 +459,7 @@ function useResetCountdown() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoadmap, onRoadmapGenerated, onTaskComplete }) {
+export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoadmap, onRoadmapGenerated, onTaskComplete, rankData, onRankUpdate }) {
   var insets = useSafeAreaInsets();
   var [roadmap, setRoadmap] = useState(cachedRoadmap || null);
   var [checked, setChecked] = useState({});
@@ -259,7 +471,11 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   var [celebrated, setCelebrated] = useState(false);
   var [rewardMsg, setRewardMsg] = useState('');
   var [showReward, setShowReward] = useState(false);
+  var [breakthroughRankKey, setBreakthroughRankKey] = useState(null); // 試験対象ランク
   var countdown = useResetCountdown();
+
+  // 現在のランク
+  var currentRank = getRankFromStreak(streak || 0);
 
   // ── 4段階メッセージの管理 ──────────────────────────────────────────────────
   // basicRewardId: 基礎6個のうちメッセージを出す1個のID（ロード時にランダム決定）
@@ -276,10 +492,33 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   var pulseAnim = useRef(new Animated.Value(1)).current;
   var scrollRef = useRef(null);
 
+  // ─── 段階突破試験トリガー ───────────────────────────────────────────────────
+  // RANKS の testAt (7, 30, 90, 180) をstreakが踏んだら試験モーダルを出す
+  useEffect(function() {
+    if (!streak || !rankData) return;
+    var rd = rankData || {};
+    var shownFor = rd.testShownFor || {};
+    var passedTests = rd.passedTests || {};
+    // 各ランクの testAt と streak が一致 && まだパスしてない && 今日まだ表示してない
+    for (var i = 0; i < RANKS.length; i++) {
+      var r = RANKS[i];
+      if (r.testAt && streak === r.testAt && !passedTests[r.key] && !shownFor[r.key]) {
+        setBreakthroughRankKey(r.key);
+        // 表示済みフラグを立てる（当日再表示しない）
+        if (onRankUpdate) {
+          onRankUpdate(function(prev) {
+            return Object.assign({}, prev, { testShownFor: Object.assign({}, (prev.testShownFor || {}), { [r.key]: true }) });
+          });
+        }
+        break;
+      }
+    }
+  }, [streak]);
+
   // ロードマップ生成
   useEffect(function() {
     if (cachedRoadmap) return;
-    generateRoadmap(userData)
+    generateRoadmap(userData, streak)
       .then(function(rm) { setRoadmap(rm); if (onRoadmapGenerated) onRoadmapGenerated(rm); setIsGenerating(false); })
       .catch(function() { setRoadmap(FALLBACK); setIsGenerating(false); });
   }, []);
@@ -433,12 +672,38 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   // ── Main UI ──
   return (
     <View style={s.root}>
+      {/* 段階突破試験モーダル */}
+      <BreakthroughTestModal
+        visible={!!breakthroughRankKey}
+        rankKey={breakthroughRankKey}
+        streak={streak}
+        userData={userData}
+        onPass={function() {
+          setBreakthroughRankKey(null);
+          if (onRankUpdate) {
+            onRankUpdate(function(prev) {
+              return Object.assign({}, prev, {
+                passedTests: Object.assign({}, (prev.passedTests || {}), { [breakthroughRankKey]: true }),
+              });
+            });
+          }
+        }}
+        onClose={function() { setBreakthroughRankKey(null); }}
+      />
+
       <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <View style={s.hRow}>
           <Text style={s.hTitle}>今日のやること</Text>
-          <View style={s.streakRow}>
-            <Text>🔥</Text>
-            <Text style={s.streakNum}>{streak}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {/* ランクバッジ */}
+            <View style={[s.rankBadge, { backgroundColor: currentRank.bg, borderColor: currentRank.color + '40' }]}>
+              <Text style={s.rankBadgeEmoji}>{currentRank.emoji}</Text>
+              <Text style={[s.rankBadgeTxt, { color: currentRank.color }]}>{currentRank.label}</Text>
+            </View>
+            <View style={s.streakRow}>
+              <Text>🔥</Text>
+              <Text style={s.streakNum}>{streak}</Text>
+            </View>
           </View>
         </View>
         {/* リセットカウントダウン */}
@@ -639,6 +904,9 @@ var s = StyleSheet.create({
   resetTxt: { fontSize: 11, color: '#A3A3A3', fontWeight: '500' },
   resetTxtUrgent: { color: '#EF4444', fontWeight: '700' },
   streakSafeTag: { marginLeft: 'auto', fontSize: 10, color: '#22C55E', fontWeight: '700' },
+  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
+  rankBadgeEmoji: { fontSize: 13 },
+  rankBadgeTxt: { fontSize: 11, fontWeight: '800', letterSpacing: 0.3 },
 
   scroll:  { paddingBottom: 20 },
   sep:     { height: 0.5, backgroundColor: SEP },

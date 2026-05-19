@@ -30,6 +30,7 @@ var BORDER = '#F0F0F0';
 var STORAGE_KEY = 'tomoshibi_user';
 var STREAK_KEY = 'tomoshibi_streak';
 var STATS_KEY = 'tomoshibi_stats';
+var RANK_KEY = 'tomoshibi_rank';
 
 var TABS = [
   { key: 'dream',   label: '夢',      icon: 'star',                iconOff: 'star-outline' },
@@ -47,6 +48,7 @@ function App() {
   var s5 = useState(null);
   var s6 = useState(true);
   var s7 = useState({ totalTasksDone: 0, joinDate: Date.now(), daysActive: [] });
+  var s8 = useState({ passedTests: {}, testShownFor: {} }); // ランクデータ
   var userDataVal = s1[0];
   var setUserData = s1[1];
   var activeTabVal = s2[0];
@@ -61,16 +63,20 @@ function App() {
   var setIsBooting = s6[1];
   var stats = s7[0];
   var setStats = s7[1];
+  var rankData = s8[0];
+  var setRankData = s8[1];
 
   // 起動時にAsyncStorageから一括ロード
   useEffect(function() {
     async function boot() {
-      var saved      = await loadStorage(STORAGE_KEY);
+      var saved       = await loadStorage(STORAGE_KEY);
       var savedStreak = await loadStorage(STREAK_KEY);
       var savedStats  = await loadStorage(STATS_KEY);
+      var savedRank   = await loadStorage(RANK_KEY);
       if (saved)       s1[1](saved);
       if (savedStreak) s3[1](savedStreak);
       if (savedStats)  s7[1](savedStats);
+      if (savedRank)   s8[1](savedRank);
       setIsBooting(false);
     }
     boot();
@@ -87,6 +93,10 @@ function App() {
   useEffect(function() {
     saveStorage(STATS_KEY, stats);
   }, [stats]);
+
+  useEffect(function() {
+    saveStorage(RANK_KEY, rankData);
+  }, [rankData]);
 
   function handleTaskComplete(count) {
     setStats(function(prev) {
@@ -149,6 +159,8 @@ function App() {
       cachedRoadmap: cachedRoadmap,
       onRoadmapGenerated: setCachedRoadmap,
       onTaskComplete: handleTaskComplete,
+      rankData: rankData,
+      onRankUpdate: setRankData,
     });
   } else if (activeTabVal === 'friends') {
     screen = React.createElement(FriendsScreen, {

@@ -1,3 +1,46 @@
+// ─── ランクシステム ────────────────────────────────────────────────────────────
+export const RANKS = [
+  { key: 'novice',       label: '初歩', emoji: '🌱', color: '#94A3B8', bg: '#F8FAFC', days: 0,   testAt: 7   },
+  { key: 'basic',        label: '基礎', emoji: '📚', color: '#3B82F6', bg: '#EFF6FF', days: 8,   testAt: 30  },
+  { key: 'intermediate', label: '中級', emoji: '⚡', color: '#8B5CF6', bg: '#F5F3FF', days: 31,  testAt: 90  },
+  { key: 'advanced',     label: '上級', emoji: '🔥', color: '#F97316', bg: '#FFF7ED', days: 91,  testAt: 180 },
+  { key: 'expert',       label: '応用', emoji: '👑', color: '#EAB308', bg: '#FEFCE8', days: 181, testAt: null },
+];
+
+// streak日数から現在のランクを返す
+export function getRankFromStreak(streak) {
+  var s = streak || 0;
+  if (s >= 181) return RANKS[4];
+  if (s >= 91)  return RANKS[3];
+  if (s >= 31)  return RANKS[2];
+  if (s >= 8)   return RANKS[1];
+  return RANKS[0];
+}
+
+// ランクごとの段階突破試験（3問）
+export const RANK_TEST_QUESTIONS = {
+  novice: [
+    'この7日間、毎日続けた行動を具体的に教えてください。',
+    '続けていて一番しんどかった日はいつで、どうやって乗り越えましたか？',
+    '次の30日間で「{dream}」に向けてやり遂げたいことを1つ教えてください。',
+  ],
+  basic: [
+    '30日間続けてきた中で、自分が変わったと感じる点を教えてください。',
+    'この期間で習慣にできたことと、まだ定着しきれていないことを正直に教えてください。',
+    '中級ランクに進む準備ができていると思う理由を具体的に教えてください。',
+  ],
+  intermediate: [
+    '90日間の取り組みで、最も大きな成果や学びは何でしたか？',
+    '「{dream}」の実現に向けて、今の自分の実力を100点中何点だと思いますか？理由も教えてください。',
+    '上級ランクでどんな挑戦に取り組みたいですか？具体的に教えてください。',
+  ],
+  advanced: [
+    '180日間続けてきたことで、自分や周囲にどんな変化がありましたか？',
+    'この半年間で一番誇りに思う取り組みを教えてください。',
+    '「{dream}」の実現まで今どのステージにいると思いますか？正直に教えてください。',
+  ],
+};
+
 export const FIELDS = [
   { id: 'music',      label: '🎵 音楽',       icon: 'musical-notes' },
   { id: 'art',        label: '🎨 アート',      icon: 'color-palette' },
