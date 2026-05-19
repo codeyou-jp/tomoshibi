@@ -82,6 +82,10 @@ export default function CoachScreen(props) {
   var input = si[0];
   var setInput = si[1];
 
+  var sh = useState(44);
+  var inputHeight = sh[0];
+  var setInputHeight = sh[1];
+
   var sl = useState(false);
   var loading = sl[0];
   var setLoading = sl[1];
@@ -237,13 +241,16 @@ export default function CoachScreen(props) {
 
       React.createElement(View, { style: s.inputRow },
         React.createElement(TextInput, {
-          style: s.input,
+          style: [s.input, { height: inputHeight }],
           value: input,
           onChangeText: setInput,
+          onContentSizeChange: function(e) {
+            var h = e.nativeEvent.contentSize.height;
+            setInputHeight(Math.min(Math.max(44, h + 4), 120));
+          },
           placeholder: '悩みや質問を入力...',
           placeholderTextColor: '#94A3B8',
           multiline: true,
-          numberOfLines: 1,
           editable: !loading
         }),
         React.createElement(TouchableOpacity, {
@@ -284,7 +291,7 @@ var s = StyleSheet.create({
   quickChip: { backgroundColor: '#F8F8F8', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
   quickTxt: { color: '#000000', fontSize: 12, fontWeight: '500' },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingLeft: 12, paddingRight: 16, paddingVertical: 10, paddingBottom: 24, gap: 10, backgroundColor: '#FFFFFF', borderTopWidth: 0.5, borderTopColor: '#F0F0F0' },
-  input: { flex: 1, backgroundColor: '#F8F8F8', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: '#000000', fontSize: 16, maxHeight: 120, minHeight: 44 },
+  input: { flex: 1, backgroundColor: '#F8F8F8', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: '#000000', fontSize: 15, minHeight: 44, maxHeight: 120 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F97316', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   sendOff: { opacity: 0.35 },
   botWrapper: { alignSelf: 'flex-start', maxWidth: '90%', gap: 4 },

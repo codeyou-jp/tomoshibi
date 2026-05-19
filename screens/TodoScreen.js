@@ -466,6 +466,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   var [isGenerating, setIsGenerating] = useState(!cachedRoadmap);
   var [showRoadmap, setShowRoadmap] = useState(false);
   var [chatInput, setChatInput] = useState('');
+  var [chatInputHeight, setChatInputHeight] = useState(44);
   var [chatHistory, setChatHistory] = useState([]);
   var [isChatLoading, setIsChatLoading] = useState(false);
   var [celebrated, setCelebrated] = useState(false);
@@ -859,13 +860,16 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
         {/* ── Input ── */}
         <View style={s.inputRow}>
           <TextInput
-            style={s.input}
+            style={[s.input, { height: chatInputHeight }]}
             value={chatInput}
             onChangeText={setChatInput}
+            onContentSizeChange={function(e) {
+              var h = e.nativeEvent.contentSize.height;
+              setChatInputHeight(Math.min(Math.max(44, h + 4), 120));
+            }}
             placeholder="ロードマップやTodoを相談..."
             placeholderTextColor={GRAY2}
             multiline
-            numberOfLines={1}
             editable={!isChatLoading}
           />
           <TouchableOpacity
@@ -957,7 +961,7 @@ var s = StyleSheet.create({
 
   // Input
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, paddingBottom: 24, gap: 10, backgroundColor: '#FFFFFF', borderTopWidth: 0.5, borderTopColor: SEP },
-  input:    { flex: 1, backgroundColor: '#F4F4F4', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: BLACK, fontSize: 15, maxHeight: 120, minHeight: 44 },
+  input:    { flex: 1, backgroundColor: '#F4F4F4', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: BLACK, fontSize: 15, minHeight: 44, maxHeight: 120 },
   sendBtn:  { width: 44, height: 44, borderRadius: 22, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center' },
   sendOff:  { opacity: 0.3 },
 
