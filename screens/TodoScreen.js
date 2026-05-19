@@ -220,6 +220,32 @@ async function updateWithChat(userMsg, roadmap, chatHistory, userData) {
   return { reply: reply, roadmap: newRoadmap };
 }
 
+// ─── 深夜リセットカウントダウン ───────────────────────────────────────────────
+function useResetCountdown() {
+  var [label, setLabel] = useState('');
+  var [urgent, setUrgent] = useState(false);
+
+  useEffect(function() {
+    function calc() {
+      var now = new Date();
+      var midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0); // 翌日0:00
+      var diff = midnight - now; // ms
+      var h = Math.floor(diff / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var isUrgent = h < 3; // 3時間切ったら警告色
+      var txt = h > 0 ? h + '時間' + m + '分でリセット' : m + '分でリセット';
+      setLabel(txt);
+      setUrgent(isUrgent);
+    }
+    calc();
+    var id = setInterval(calc, 60000); // 1分ごとに更新
+    return function() { clearInterval(id); };
+  }, []);
+
+  return { label: label, urgent: urgent };
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoadmap, onRoadmapGenerated, onTaskComplete }) {
   var insets = useSafeAreaInsets();
@@ -233,6 +259,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   var [celebrated, setCelebrated] = useState(false);
   var [rewardMsg, setRewardMsg] = useState('');
   var [showReward, setShowReward] = useState(false);
+  var countdown = useResetCountdown();
 
   // ── 4段階メッセージの管理 ──────────────────────────────────────────────────
   // basicRewardId: 基礎6個のうちメッセージを出す1個のID（ロード時にランダム決定）
@@ -414,6 +441,14 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
             <Text style={s.streakNum}>{streak}</Text>
           </View>
         </View>
+        {/* リセットカウントダウン */}
+        <View style={s.resetRow}>
+          <View style={[s.resetDot, { backgroundColor: countdown.urgent ? '#EF4444' : '#D1D5DB' }]} />
+          <Text style={[s.resetTxt, countdown.urgent && s.resetTxtUrgent]}>
+            {countdown.urgent ? '⚠️ ' : ''}{countdown.label}
+          </Text>
+          {hit75 && <Text style={s.streakSafeTag}>✓ ストリーク確保済み</Text>}
+        </View>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -594,11 +629,16 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
 
 var s = StyleSheet.create({
   root:    { flex: 1, backgroundColor: '#FFFFFF' },
-  header:  { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 0.5, borderBottomColor: SEP },
-  hRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header:  { paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: SEP },
+  hRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6 },
   hTitle:  { fontSize: 24, fontWeight: '900', color: BLACK, letterSpacing: -0.5 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   streakNum: { fontSize: 16, fontWeight: '800', color: ORANGE },
+  resetRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  resetDot: { width: 6, height: 6, borderRadius: 3 },
+  resetTxt: { fontSize: 11, color: '#A3A3A3', fontWeight: '500' },
+  resetTxtUrgent: { color: '#EF4444', fontWeight: '700' },
+  streakSafeTag: { marginLeft: 'auto', fontSize: 10, color: '#22C55E', fontWeight: '700' },
 
   scroll:  { paddingBottom: 20 },
   sep:     { height: 0.5, backgroundColor: SEP },
