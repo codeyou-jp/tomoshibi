@@ -1,4 +1,9 @@
 {
   "outputDirectory": "dist",
-  "buildCommand": "npx expo export --platform web --output-dir dist"
+  "buildCommand": "npx expo export --platform web --output-dir dist && cp public/privacy.html dist/privacy.html && cp public/terms.html dist/terms.html",
+  "rewrites": [
+    { "source": "/privacy.html", "destination": "/privacy.html" },
+    { "source": "/terms.html", "destination": "/terms.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
