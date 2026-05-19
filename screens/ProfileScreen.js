@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FIELDS, ROLE_MODELS } from '../constants/data';
+import { loadStorage, saveStorage } from '../utils/storage';
 
 var PRIMARY = '#F97316';
 var NAVY = '#000000';
@@ -43,13 +44,6 @@ var REVEAL_OPTIONS = [
   { label: '6ヶ月後',  days: 180 },
   { label: '1年後',    days: 365 },
 ];
-
-function loadCapsules() {
-  try { return JSON.parse(localStorage.getItem(CAPSULE_KEY)) || []; } catch (e) { return []; }
-}
-function saveCapsules(list) {
-  try { localStorage.setItem(CAPSULE_KEY, JSON.stringify(list)); } catch (e) {}
-}
 function daysUntil(timestamp) {
   var diff = timestamp - Date.now();
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
@@ -793,9 +787,16 @@ export default function ProfileScreen(props) {
   var capsuleWriteOpen = sc[0];
   var setCapsuleWriteOpen = sc[1];
 
-  var scaps = React.useState(function() { return loadCapsules(); });
+  var scaps = React.useState([]);
   var capsules = scaps[0];
   var setCapsules = scaps[1];
+
+  // 起動時にカプセルをロード
+  React.useEffect(function() {
+    loadStorage(CAPSULE_KEY).then(function(saved) {
+      if (saved && saved.length > 0) setCapsules(saved);
+    });
+  }, []);
 
   var username = (userData && userData.username) || 'anonymous';
   var dream = (userData && userData.dream) || '夢を設定中...';
@@ -827,7 +828,7 @@ export default function ProfileScreen(props) {
   function handleAddCapsule(capsule) {
     var next = capsules.concat([capsule]);
     setCapsules(next);
-    saveCapsules(next);
+    saveStorage(CAPSULE_KEY, next);
   }
 
   function handleOpenCapsule(id) {
@@ -836,7 +837,7 @@ export default function ProfileScreen(props) {
       return c;
     });
     setCapsules(next);
-    saveCapsules(next);
+    saveStorage(CAPSULE_KEY, next);
   }
 
   return React.createElement(View, { style: styles.container },

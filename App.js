@@ -10,6 +10,7 @@ import CoachScreen from './screens/CoachScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import DMScreen from './screens/DMScreen';
+import { loadStorage, saveStorage } from './utils/storage';
 
 var PRIMARY = '#F97316';
 var MUTED = '#C0C0C0';
@@ -27,13 +28,6 @@ var TABS = [
   { key: 'coach',   label: 'コーチ',  icon: 'chatbubble-ellipses', iconOff: 'chatbubble-ellipses-outline' },
   { key: 'profile', label: '自分',     icon: 'person-circle',       iconOff: 'person-circle-outline' },
 ];
-
-function loadStorage(key) {
-  try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
-}
-function saveStorage(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
-}
 
 export default function App() {
   var s1 = useState(null);
@@ -58,14 +52,18 @@ export default function App() {
   var stats = s7[0];
   var setStats = s7[1];
 
+  // 起動時にAsyncStorageから一括ロード
   useEffect(function() {
-    var saved = loadStorage(STORAGE_KEY);
-    var savedStreak = loadStorage(STREAK_KEY);
-    var savedStats = loadStorage(STATS_KEY);
-    if (saved) { s1[1](saved); }
-    if (savedStreak) { s3[1](savedStreak); }
-    if (savedStats) { s7[1](savedStats); }
-    setIsBooting(false);
+    async function boot() {
+      var saved      = await loadStorage(STORAGE_KEY);
+      var savedStreak = await loadStorage(STREAK_KEY);
+      var savedStats  = await loadStorage(STATS_KEY);
+      if (saved)       s1[1](saved);
+      if (savedStreak) s3[1](savedStreak);
+      if (savedStats)  s7[1](savedStats);
+      setIsBooting(false);
+    }
+    boot();
   }, []);
 
   useEffect(function() {

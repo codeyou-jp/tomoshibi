@@ -10,14 +10,9 @@ const GRAY2  = '#A3A3A3';
 const SEP    = '#F0F0F0';
 const BG     = '#FFFFFF';
 
-var CHEERED_KEY = 'tomoshibi_cheered';
+import { loadStorage, saveStorage } from '../utils/storage';
 
-function loadCheered() {
-  try { return JSON.parse(localStorage.getItem(CHEERED_KEY)) || {}; } catch (e) { return {}; }
-}
-function saveCheered(val) {
-  try { localStorage.setItem(CHEERED_KEY, JSON.stringify(val)); } catch (e) {}
-}
+var CHEERED_KEY = 'tomoshibi_cheered';
 
 function Pressable({ onPress, style, children }) {
   var scale = useRef(new Animated.Value(1)).current;
@@ -36,7 +31,14 @@ function Pressable({ onPress, style, children }) {
 }
 
 export default function DreamScreen({ userData, streak }) {
-  const [cheered, setCheered] = useState(function() { return loadCheered(); });
+  const [cheered, setCheered] = useState({});
+
+  // 起動時にハート状態をロード
+  useEffect(function() {
+    loadStorage(CHEERED_KEY).then(function(saved) {
+      if (saved) setCheered(saved);
+    });
+  }, []);
   const dream = userData.dreamTitle || userData.dream || '';
 
   return (
@@ -88,7 +90,7 @@ export default function DreamScreen({ userData, streak }) {
                 <Pressable onPress={() => {
                   setCheered(function(p) {
                     var next = Object.assign({}, p, { [u.id]: !p[u.id] });
-                    saveCheered(next);
+                    saveStorage(CHEERED_KEY, next);
                     return next;
                   });
                 }}>

@@ -49,25 +49,25 @@ async function callClaude(history, userData) {
   return data.text;
 }
 
-var COACH_HISTORY_KEY = 'tomoshibi_coach_history';
+import { loadStorage, saveStorage } from '../utils/storage';
 
-function loadHistory(userData) {
-  try {
-    var saved = localStorage.getItem(COACH_HISTORY_KEY);
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      if (parsed && parsed.length > 0) return parsed;
-    }
-  } catch (e) {}
-  return [{ role: 'bot', text: 'こんにちは！AIコーチです🤖\n「' + (userData.dream || '') + '」という夢、一緒にかなえましょう。\n何でも話しかけてください！' }];
-}
+var COACH_HISTORY_KEY = 'tomoshibi_coach_history';
 
 export default function CoachScreen(props) {
   var userData = props.userData;
 
-  var sm = useState(function() { return loadHistory(userData); });
+  var defaultMsg = [{ role: 'bot', text: 'こんにちは！AIコーチです🤖\n「' + (userData.dream || '') + '」という夢、一緒にかなえましょう。\n何でも話しかけてください！' }];
+
+  var sm = useState(defaultMsg);
   var msgs = sm[0];
   var setMsgs = sm[1];
+
+  // 起動時に会話履歴をロード
+  useEffect(function() {
+    loadStorage(COACH_HISTORY_KEY).then(function(saved) {
+      if (saved && saved.length > 0) setMsgs(saved);
+    });
+  }, []);
 
   var si = useState('');
   var input = si[0];
@@ -81,10 +81,8 @@ export default function CoachScreen(props) {
 
   // 会話履歴を自動保存（最新50件まで）
   useEffect(function() {
-    try {
-      var toSave = msgs.filter(function(m) { return m.role !== 'loading'; }).slice(-50);
-      localStorage.setItem(COACH_HISTORY_KEY, JSON.stringify(toSave));
-    } catch (e) {}
+    var toSave = msgs.filter(function(m) { return m.role !== 'loading'; }).slice(-50);
+    saveStorage(COACH_HISTORY_KEY, toSave);
   }, [msgs]);
 
   function scrollDown() {
