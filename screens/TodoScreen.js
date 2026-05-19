@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-var API_URL = 'https://cu-tomoshibi.vercel.app/api/chat';
+var API_URL = 'https://hi-backend.vercel.app/api/chat';
 
 var ORANGE = '#F97316';
 var BLACK  = '#000000';
