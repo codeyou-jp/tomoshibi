@@ -1,8 +1,16 @@
+import * as Sentry from '@sentry/react-native';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+Sentry.init({
+  dsn: 'https://ce322c9f6c91f82d23214cd19405f2f7@o4511414398156800.ingest.us.sentry.io/4511414416048128',
+  enableInExpoDevelopment: false,
+  debug: false,
+  tracesSampleRate: 1.0,
+});
 
 import OnboardingScreen from './screens/OnboardingScreen';
 import DreamScreen from './screens/DreamScreen';
@@ -31,7 +39,7 @@ var TABS = [
   { key: 'profile', label: '自分',     icon: 'person-circle',       iconOff: 'person-circle-outline' },
 ];
 
-export default function App() {
+function App() {
   var s1 = useState(null);
   var s2 = useState('dream');
   var s3 = useState(0);
@@ -202,3 +210,5 @@ var styles = StyleSheet.create({
   tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   tabDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#F97316' },
 });
+
+export default Sentry.wrap(App);
