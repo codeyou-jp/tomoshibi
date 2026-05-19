@@ -421,7 +421,7 @@ var bt = StyleSheet.create({
     fontSize: 15, color: '#000', minHeight: 120,
     textAlignVertical: 'top', borderWidth: 1, borderColor: '#F0F0F0',
   },
-  nextBtn:    { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
+  nextBtn:    { borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, alignItems: 'center', marginTop: 4 },
   nextBtnOff: { opacity: 0.3 },
   nextBtnTxt: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   evalTxt:    { fontSize: 14, color: '#A3A3A3', marginTop: 16 },
@@ -696,9 +696,9 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
           <Text style={s.hTitle}>今日のやること</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             {/* ランクバッジ */}
-            <View style={[s.rankBadge, { backgroundColor: currentRank.bg, borderColor: currentRank.color + '40' }]}>
+            <View style={s.rankBadge}>
               <Text style={s.rankBadgeEmoji}>{currentRank.emoji}</Text>
-              <Text style={[s.rankBadgeTxt, { color: currentRank.color }]}>{currentRank.label}</Text>
+              <Text style={s.rankBadgeTxt}>{currentRank.label}</Text>
             </View>
             <View style={s.streakRow}>
               <Text>🔥</Text>
@@ -904,9 +904,9 @@ var s = StyleSheet.create({
   resetTxt: { fontSize: 11, color: '#A3A3A3', fontWeight: '500' },
   resetTxtUrgent: { color: '#EF4444', fontWeight: '700' },
   streakSafeTag: { marginLeft: 'auto', fontSize: 10, color: '#22C55E', fontWeight: '700' },
-  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
-  rankBadgeEmoji: { fontSize: 13 },
-  rankBadgeTxt: { fontSize: 11, fontWeight: '800', letterSpacing: 0.3 },
+  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  rankBadgeEmoji: { fontSize: 12 },
+  rankBadgeTxt: { fontSize: 11, fontWeight: '600', color: '#A3A3A3' },
 
   scroll:  { paddingBottom: 20 },
   sep:     { height: 0.5, backgroundColor: SEP },
