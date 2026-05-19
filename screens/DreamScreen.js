@@ -41,7 +41,8 @@ export default function DreamScreen({ userData, streak }) {
       if (saved) setCheered(saved);
     });
   }, []);
-  const dream = userData.dreamTitle || userData.dream || '';
+  // プロフィール編集のdreamを優先、なければonboardingのdreamTitleにフォールバック
+  const dream = userData.dream || userData.dreamTitle || '';
 
   return (
     <View style={s.root}>

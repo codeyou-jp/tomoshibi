@@ -65,10 +65,16 @@ export default function CoachScreen(props) {
   var msgs = sm[0];
   var setMsgs = sm[1];
 
-  // 起動時に会話履歴をロード
+  // 起動時に会話履歴をロード → ロード完了後に最下部へスクロール
   useEffect(function() {
     loadStorage(COACH_HISTORY_KEY).then(function(saved) {
-      if (saved && saved.length > 0) setMsgs(saved);
+      if (saved && saved.length > 0) {
+        setMsgs(saved);
+        // 履歴ロード後に最下部へ（レンダリング待ちで少し遅延）
+        setTimeout(function() {
+          if (scrollRef.current) scrollRef.current.scrollToEnd({ animated: false });
+        }, 350);
+      }
     });
   }, []);
 
