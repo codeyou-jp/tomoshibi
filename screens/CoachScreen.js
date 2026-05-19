@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COMMUNITY_USERS } from '../constants/data';
 import * as Sentry from '@sentry/react-native';
 
-var API_URL = 'https://cu-tomoshibi.vercel.app/api/chat';
+var API_URL = 'https://hi-backend.vercel.app/api/chat';
 
 var QUICK = ['やる気が出ない😔', '習慣を続けるコツは？', '夢への進め方がわからない', '不安で一歩が出ない'];
 

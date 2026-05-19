@@ -6,7 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-var API_URL = 'https://cu-tomoshibi.vercel.app/api/chat';
+var API_URL = 'https://hi-backend.vercel.app/api/chat';
 
 var C = {
   orange: '#F97316', navy: '#0F172A', navyMid: '#1E3A5F',
