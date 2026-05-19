@@ -4,6 +4,7 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform, Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 var PRIMARY = '#F97316';
 var BLACK   = '#000000';
@@ -57,6 +58,7 @@ export default function DMScreen(props) {
   var onBack   = props.onBack;
   var userData = props.userData;
 
+  var insets = useSafeAreaInsets();
   var initMsgs = MOCK_MESSAGES[friend.id] || [];
 
   var sm = React.useState(initMsgs);
@@ -121,7 +123,7 @@ export default function DMScreen(props) {
   return React.createElement(View, { style: s.root },
 
     // ── Header ──
-    React.createElement(View, { style: s.header },
+    React.createElement(View, { style: [s.header, { paddingTop: insets.top + 12 }] },
       React.createElement(TouchableOpacity, { style: s.backBtn, onPress: onBack, activeOpacity: 0.7 },
         React.createElement(Ionicons, { name: 'arrow-back', size: 22, color: WHITE })
       ),
@@ -194,7 +196,7 @@ var s = StyleSheet.create({
 
   // Header
   header: {
-    paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16,
+    paddingBottom: 14, paddingHorizontal: 16,
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: BLACK,
     gap: 10,

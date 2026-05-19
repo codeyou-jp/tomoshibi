@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 var ORANGE = '#F97316';
 var BLACK  = '#000000';
@@ -16,9 +17,10 @@ var FEATURES = [
 ];
 
 export default function FriendsScreen() {
+  var insets = useSafeAreaInsets();
   return (
     <View style={s.root}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <Text style={s.title}>友達</Text>
         <Text style={s.sub}>夢を持つ仲間とつながる</Text>
       </View>
@@ -59,7 +61,7 @@ export default function FriendsScreen() {
 
 var s = StyleSheet.create({
   root:        { flex: 1, backgroundColor: '#FFFFFF' },
-  header:      { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 16 },
+  header:      { paddingHorizontal: 20, paddingBottom: 16 },
   title:       { fontSize: 24, fontWeight: '900', color: BLACK, letterSpacing: -0.5 },
   sub:         { fontSize: 13, color: GRAY2, marginTop: 3 },
   sep:         { height: 0.5, backgroundColor: SEP },

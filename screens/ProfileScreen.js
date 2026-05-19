@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FIELDS, ROLE_MODELS } from '../constants/data';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { loadStorage, saveStorage } from '../utils/storage';
 
 var PRIMARY = '#F97316';
@@ -775,6 +776,8 @@ export default function ProfileScreen(props) {
   var onUpdate = props.onUpdate;
   var stats = props.stats || {};
 
+  var insets = useSafeAreaInsets();
+
   var se = React.useState(false);
   var editOpen = se[0];
   var setEditOpen = se[1];
@@ -862,10 +865,10 @@ export default function ProfileScreen(props) {
 
     React.createElement(ScrollView, { style: { flex: 1 }, showsVerticalScrollIndicator: false },
       // Header
-      React.createElement(View, { style: styles.header },
+      React.createElement(View, { style: [styles.header, { paddingTop: insets.top + 12 }] },
         // Edit button
         React.createElement(TouchableOpacity, {
-          style: styles.editBtn,
+          style: [styles.editBtn, { top: insets.top + 12 }],
           onPress: function() { setEditOpen(true); }
         },
           React.createElement(Ionicons, { name: 'create-outline', size: 16, color: TEXT }),
@@ -1017,9 +1020,9 @@ export default function ProfileScreen(props) {
 
 var styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  header: { paddingTop: 56, paddingBottom: 28, paddingHorizontal: 20, alignItems: 'center', backgroundColor: WHITE, borderBottomWidth: 0.5, borderBottomColor: BORDER },
+  header: { paddingBottom: 28, paddingHorizontal: 20, alignItems: 'center', backgroundColor: WHITE, borderBottomWidth: 0.5, borderBottomColor: BORDER },
   editBtn: {
-    position: 'absolute', top: 56, right: 20,
+    position: 'absolute', right: 20,
     flexDirection: 'row', alignItems: 'center', gap: 5,
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
   },

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    background: transparent;
+    color: #111;
+    padding: 20px 16px 32px;
+  }
+  h2.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+  .top-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 28px;
+  }
+  .top-header .brand { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+  .top-header .sub { font-size: 13px; color: #888; margin-left: 4px; }
+  .top-header .badge {
+    margin-left: auto;
+    background: #F97316; color: #fff;
+    font-size: 11px; font-weight: 700;
+    border-radius: 20px; padding: 4px 12px;
+  }
+
+  .phases { display: flex; flex-direction: column; gap: 0; }
+
+  .phase {
+    display: flex; gap: 0;
+    position: relative;
+  }
+
+  /* Left: timeline */
+  .timeline {
+    width: 56px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    align-items: center;
+  }
+  .dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-weight: 800;
+    z-index: 1;
+  }
+  .line {
+    width: 2px; flex: 1;
+    min-height: 20px;
+    margin-top: 0;
+  }
+
+  /* Right: card */
+  .card {
+    flex: 1;
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+    margin-bottom: 16px;
+    border: 1.5px solid transparent;
+  }
+
+  .phase-label {
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .phase-title {
+    font-size: 17px; font-weight: 800;
+    letter-spacing: -0.3px; margin-bottom: 3px;
+  }
+  .phase-period {
+    font-size: 12px; font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .tasks {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .task {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .task-icon { flex-shrink: 0; margin-top: 1px; font-size: 14px; }
+  .task-text { color: #333; }
+  .task-text strong { color: #111; }
+
+  .milestone-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 12px;
+    border-radius: 20px; padding: 5px 12px;
+    font-size: 11px; font-weight: 800;
+  }
+
+  /* Phase colors */
+  .p1 .dot { background: #111; color: #fff; }
+  .p1 .line { background: #E0E0E0; }
+  .p1 .card { background: #F8F8F8; border-color: #EBEBEB; }
+  .p1 .phase-label { color: #888; }
+  .p1 .phase-title { color: #111; }
+  .p1 .phase-period { color: #888; }
+  .p1 .milestone-tag { background: #111; color: #fff; }
+
+  .p2 .dot { background: #F97316; color: #fff; }
+  .p2 .line { background: #E0E0E0; }
+  .p2 .card { background: #FFF7ED; border-color: #FED7AA; }
+  .p2 .phase-label { color: #F97316; }
+  .p2 .phase-title { color: #111; }
+  .p2 .phase-period { color: #EA580C; }
+  .p2 .milestone-tag { background: #F97316; color: #fff; }
+
+  .p3 .dot { background: #3B82F6; color: #fff; }
+  .p3 .line { background: #E0E0E0; }
+  .p3 .card { background: #EFF6FF; border-color: #BFDBFE; }
+  .p3 .phase-label { color: #3B82F6; }
+  .p3 .phase-title { color: #111; }
+  .p3 .phase-period { color: #2563EB; }
+  .p3 .milestone-tag { background: #3B82F6; color: #fff; }
+
+  .p4 .dot { background: #22C55E; color: #fff; }
+  .p4 .line { background: #E0E0E0; }
+  .p4 .card { background: #F0FDF4; border-color: #BBF7D0; }
+  .p4 .phase-label { color: #22C55E; }
+  .p4 .phase-title { color: #111; }
+  .p4 .phase-period { color: #16A34A; }
+  .p4 .milestone-tag { background: #22C55E; color: #fff; }
+
+  .p5 .dot { background: linear-gradient(135deg, #F97316, #FBBF24); color: #fff; font-size: 20px; }
+  .p5 .card { background: linear-gradient(135deg, #FFF7ED, #FFFBEB); border-color: #FED7AA; }
+  .p5 .phase-label { color: #D97706; }
+  .p5 .phase-title { color: #111; }
+  .p5 .phase-period { color: #D97706; }
+  .p5 .milestone-tag { background: linear-gradient(90deg, #F97316, #FBBF24); color: #fff; }
+
+  .connector {
+    width: 2px; background: #E0E0E0;
+    height: 16px; margin: 0 auto;
+  }
+
+  .cost-note {
+    display: flex; align-items: center; gap: 8px;
+    background: #F8F8F8; border-radius: 10px;
+    padding: 10px 14px; margin-top: 8px;
+    font-size: 12px; color: #555;
+  }
+  .cost-note strong { color: #111; }
+</style>
+</head>
+<body>
+<h2 class="sr-only">tomoshibiのApp Storeリリースまでのロードマップ（5フェーズ）</h2>
+
+<div class="top-header">
+  <span style="font-size:22px">🔥</span>
+  <span class="brand">tomoshibi 灯</span>
+  <span class="sub">App Storeロードマップ</span>
+  <span class="badge">目標: ストアリリース</span>
+</div>
+
+<div class="phases">
+
+  <!-- Phase 1 -->
+  <div class="phase p1">
+    <div class="timeline">
+      <div class="dot">1</div>
+      <div class="line"></div>
+    </div>
+    <div class="card">
+      <div class="phase-label">Phase 1</div>
+      <div class="phase-title">Web版の完成・磨き込み</div>
+      <div class="phase-period">今すぐ 〜 2週間</div>
+      <div class="tasks">
+        <div class="task"><span class="task-icon">✅</span><span class="task-text">タイムカプセル・報酬システム実装済み</span></div>
+        <div class="task"><span class="task-icon">🎨</span><span class="task-text"><strong>UIポリッシュ</strong> — ローディング・エラー状態の整備</span></div>
+        <div class="task"><span class="task-icon">🧪</span><span class="task-text"><strong>実際に使ってもらう</strong> — 友人5〜10人にWeb版を試してもらいフィードバック収集</span></div>
+        <div class="task"><span class="task-icon">🐛</span><span class="task-text">バグ潰し・クラッシュ確認</span></div>
+        <div class="task"><span class="task-icon">📝</span><span class="task-text">Apple Developer登録（年間<strong>$99</strong>）— 審査に時間かかるので早めに</span></div>
+      </div>
+      <div class="milestone-tag">🎯 ゴール: 「これなら人に見せられる」状態</div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase p2">
+    <div class="timeline">
+      <div class="dot">2</div>
+      <div class="line"></div>
+    </div>
+    <div class="card">
+      <div class="phase-label">Phase 2</div>
+      <div class="phase-title">ネイティブ化</div>
+      <div class="phase-period">2週間 〜 6週間</div>
+      <div class="tasks">
+        <div class="task"><span class="task-icon">💾</span><span class="task-text"><strong>localStorage → AsyncStorage</strong> に置き換え（データ保存のiOS対応）</span></div>
+        <div class="task"><span class="task-icon">📱</span><span class="task-text"><strong>SafeAreaView</strong> — ノッチ・Dynamic Island対応</span></div>
+        <div class="task"><span class="task-icon">⌨️</span><span class="task-text"><strong>キーボード</strong> — KeyboardAvoidingView の動作確認・修正</span></div>
+        <div class="task"><span class="task-icon">🔔</span><span class="task-text"><strong>プッシュ通知</strong> — expo-notifications でコーチ口調の通知実装</span></div>
+        <div class="task"><span class="task-icon">🏗️</span><span class="task-text"><strong>EAS Build設定</strong> — eas.json, app.json の整備</span></div>
+        <div class="task"><span class="task-icon">📲</span><span class="task-text">実機でビルド → Expo Go で動作確認</span></div>
+      </div>
+      <div class="milestone-tag">🎯 ゴール: iPhoneで実際に動く</div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase p3">
+    <div class="timeline">
+      <div class="dot">3</div>
+      <div class="line"></div>
+    </div>
+    <div class="card">
+      <div class="phase-label">Phase 3</div>
+      <div class="phase-title">審査対策・品質担保</div>
+      <div class="phase-period">6週間 〜 10週間</div>
+      <div class="tasks">
+        <div class="task"><span class="task-icon">📄</span><span class="task-text"><strong>プライバシーポリシー</strong> — Webページとして公開（必須）</span></div>
+        <div class="task"><span class="task-icon">📋</span><span class="task-text"><strong>利用規約</strong> — AI生成コンテンツの免責条項を含める</span></div>
+        <div class="task"><span class="task-icon">🚩</span><span class="task-text"><strong>通報機能</strong> — AIコンテンツへの不適切フラグ（審査ガイドライン対応）</span></div>
+        <div class="task"><span class="task-icon">💥</span><span class="task-text"><strong>クラッシュ監視</strong> — Sentry等を導入してエラー追跡</span></div>
+        <div class="task"><span class="task-icon">✈️</span><span class="task-text"><strong>TestFlight</strong> でクローズドβ配信 → 友人20〜30人で実使用テスト</span></div>
+        <div class="task"><span class="task-icon">🔑</span><span class="task-text">APIキー・秘密情報の安全な管理確認（ハードコード禁止）</span></div>
+      </div>
+      <div class="milestone-tag">🎯 ゴール: 審査で落ちない状態</div>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase p4">
+    <div class="timeline">
+      <div class="dot">4</div>
+      <div class="line"></div>
+    </div>
+    <div class="card">
+      <div class="phase-label">Phase 4</div>
+      <div class="phase-title">App Store Connect準備</div>
+      <div class="phase-period">10週間 〜 12週間</div>
+      <div class="tasks">
+        <div class="task"><span class="task-icon">🖼️</span><span class="task-text"><strong>スクリーンショット</strong> — 6.5インチ・5.5インチ・iPad用（各3〜5枚）</span></div>
+        <div class="task"><span class="task-icon">🎬</span><span class="task-text">プレビュー動画（任意だが効果大）</span></div>
+        <div class="task"><span class="task-icon">✍️</span><span class="task-text"><strong>説明文・キーワード</strong> — ASO（App Store最適化）意識して作成</span></div>
+        <div class="task"><span class="task-icon">🎨</span><span class="task-text"><strong>アイコン</strong> — 1024×1024px、背景透過なし</span></div>
+        <div class="task"><span class="task-icon">🌐</span><span class="task-text">サポートURL・マーケティングURL設定</span></div>
+        <div class="task"><span class="task-icon">💰</span><span class="task-text">価格設定（無料 or 課金モデルの決定）</span></div>
+      </div>
+      <div class="milestone-tag">🎯 ゴール: 申請ボタンが押せる状態</div>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase p5">
+    <div class="timeline">
+      <div class="dot">🚀</div>
+    </div>
+    <div class="card">
+      <div class="phase-label">Phase 5</div>
+      <div class="phase-title">審査提出 → リリース 🎉</div>
+      <div class="phase-period">12週間〜 / 審査期間: 通常1〜3日</div>
+      <div class="tasks">
+        <div class="task"><span class="task-icon">📤</span><span class="task-text">App Store Connectから審査提出</span></div>
+        <div class="task"><span class="task-icon">⏳</span><span class="task-text">審査待ち（平均24〜48時間。初回は1週間かかることも）</span></div>
+        <div class="task"><span class="task-icon">❗</span><span class="task-text">リジェクト対応 → 修正して再提出（よくある）</span></div>
+        <div class="task"><span class="task-icon">🎉</span><span class="task-text"><strong>リリース</strong> — 日時指定でリリース可能</span></div>
+        <div class="task"><span class="task-icon">📣</span><span class="task-text">SNS告知・ProductHunt・学校コミュニティへの展開</span></div>
+      </div>
+      <div class="milestone-tag">🔥 ゴール: 世界に灯をともす</div>
+
+      <div class="cost-note">
+        <span>💰</span>
+        <span>必要費用: Apple Developer <strong>$99/年</strong>（約15,000円）+ Claude API利用料</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

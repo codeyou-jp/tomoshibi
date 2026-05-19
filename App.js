@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import OnboardingScreen from './screens/OnboardingScreen';
 import DreamScreen from './screens/DreamScreen';
@@ -11,6 +12,7 @@ import FriendsScreen from './screens/FriendsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import DMScreen from './screens/DMScreen';
 import { loadStorage, saveStorage } from './utils/storage';
+import { setupDailyReminder } from './utils/notifications';
 
 var PRIMARY = '#F97316';
 var MUTED = '#C0C0C0';
@@ -91,28 +93,40 @@ export default function App() {
   }
 
   if (isBooting) {
-    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+      </SafeAreaProvider>
+    );
   }
 
   if (!userDataVal) {
     return (
-      <View style={{ flex: 1 }}>
-        <StatusBar style="light" />
-        <OnboardingScreen onComplete={setUserData} />
-      </View>
+      <SafeAreaProvider>
+        <View style={{ flex: 1 }}>
+          <StatusBar style="light" />
+          <OnboardingScreen onComplete={function(data) {
+            setUserData(data);
+            // オンボーディング完了後にデイリーリマインダーをセットアップ
+            setupDailyReminder();
+          }} />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   if (dmFriend) {
     return (
-      <View style={styles.root}>
-        <StatusBar style="light" />
-        {React.createElement(DMScreen, {
-          friend: dmFriend,
-          userData: userDataVal,
-          onBack: function() { setDmFriend(null); }
-        })}
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.root}>
+          <StatusBar style="light" />
+          {React.createElement(DMScreen, {
+            friend: dmFriend,
+            userData: userDataVal,
+            onBack: function() { setDmFriend(null); }
+          })}
+        </View>
+      </SafeAreaProvider>
     );
   }
 
@@ -145,6 +159,7 @@ export default function App() {
   }
 
   return (
+    <SafeAreaProvider>
     <View style={styles.root}>
       <StatusBar style="dark" />
       <View style={styles.body}>{screen}</View>
@@ -169,6 +184,7 @@ export default function App() {
         })}
       </View>
     </View>
+    </SafeAreaProvider>
   );
 }
 

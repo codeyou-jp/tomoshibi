@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COMMUNITY_USERS } from '../constants/data';
 
 const ORANGE = '#F97316';
@@ -31,6 +32,7 @@ function Pressable({ onPress, style, children }) {
 }
 
 export default function DreamScreen({ userData, streak }) {
+  const insets = useSafeAreaInsets();
   const [cheered, setCheered] = useState({});
 
   // 起動時にハート状態をロード
@@ -45,7 +47,7 @@ export default function DreamScreen({ userData, streak }) {
     <View style={s.root}>
 
       {/* ── Header ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <Text style={s.logo}>灯</Text>
         <View style={s.streakRow}>
           <Text style={s.streakFire}>🔥</Text>
@@ -116,7 +118,7 @@ const s = StyleSheet.create({
   root:        { flex: 1, backgroundColor: BG },
 
   // Header
-  header:      { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 0.5, borderBottomColor: SEP },
+  header:      { paddingHorizontal: 20, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 0.5, borderBottomColor: SEP },
   logo:        { fontSize: 24, fontWeight: '900', color: BLACK, letterSpacing: -1 },
   streakRow:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
   streakFire:  { fontSize: 15 },

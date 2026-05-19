@@ -4,6 +4,7 @@ import {
   TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 var API_URL = 'https://cu-tomoshibi.vercel.app/api/chat';
 
@@ -214,6 +215,7 @@ async function updateWithChat(userMsg, roadmap, chatHistory, userData) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoadmap, onRoadmapGenerated, onTaskComplete }) {
+  var insets = useSafeAreaInsets();
   var [roadmap, setRoadmap] = useState(cachedRoadmap || null);
   var [checked, setChecked] = useState({});
   var [isGenerating, setIsGenerating] = useState(!cachedRoadmap);
@@ -386,7 +388,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   if (isGenerating) {
     return (
       <View style={s.root}>
-        <View style={s.header}>
+        <View style={[s.header, { paddingTop: insets.top + 12 }]}>
           <View style={s.hRow}><Text style={s.hTitle}>今日のやること</Text></View>
         </View>
         <SkeletonScreen />
@@ -397,7 +399,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   // ── Main UI ──
   return (
     <View style={s.root}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <View style={s.hRow}>
           <Text style={s.hTitle}>今日のやること</Text>
           <View style={s.streakRow}>
@@ -585,7 +587,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
 
 var s = StyleSheet.create({
   root:    { flex: 1, backgroundColor: '#FFFFFF' },
-  header:  { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 0.5, borderBottomColor: SEP },
+  header:  { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 0.5, borderBottomColor: SEP },
   hRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   hTitle:  { fontSize: 24, fontWeight: '900', color: BLACK, letterSpacing: -0.5 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

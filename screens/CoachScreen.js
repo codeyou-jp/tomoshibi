@@ -49,12 +49,14 @@ async function callClaude(history, userData) {
   return data.text;
 }
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { loadStorage, saveStorage } from '../utils/storage';
 
 var COACH_HISTORY_KEY = 'tomoshibi_coach_history';
 
 export default function CoachScreen(props) {
   var userData = props.userData;
+  var insets = useSafeAreaInsets();
 
   var defaultMsg = [{ role: 'bot', text: 'こんにちは！AIコーチです🤖\n「' + (userData.dream || '') + '」という夢、一緒にかなえましょう。\n何でも話しかけてください！' }];
 
@@ -113,7 +115,7 @@ export default function CoachScreen(props) {
   }
 
   return React.createElement(View, { style: s.root },
-    React.createElement(View, { style: s.header },
+    React.createElement(View, { style: [s.header, { paddingTop: insets.top + 12 }] },
       React.createElement(View, { style: s.hRow },
         React.createElement(View, { style: s.avatar },
           React.createElement(Text, { style: { fontSize: 20 } }, '🤖')
@@ -217,7 +219,7 @@ export default function CoachScreen(props) {
 
 var s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 0.5, borderBottomColor: '#F0F0F0' },
+  header: { paddingHorizontal: 20, paddingBottom: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 0.5, borderBottomColor: '#F0F0F0' },
   hRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F8F8F8', alignItems: 'center', justifyContent: 'center' },
   hTitle: { fontSize: 17, fontWeight: '700', color: '#000000' },
