@@ -101,28 +101,27 @@ function App() {
     document.addEventListener('gestureend',    preventGesture, { passive: false });
     document.addEventListener('touchmove',     preventPinch,   { passive: false });
 
-    // キーボード表示検知 → タブバーを隠す
-    var baseHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    function onViewportResize() {
-      var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      setWebKbVisible(h < baseHeight * 0.85);
+    // 入力欄フォーカス時にタブバーを隠す（キーボードアニメーション前に発火）
+    function onFocusIn(e) {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        setWebKbVisible(true);
+      }
     }
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', onViewportResize);
-    } else {
-      window.addEventListener('resize', onViewportResize);
+    function onFocusOut(e) {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        setWebKbVisible(false);
+      }
     }
+    document.addEventListener('focusin',  onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
 
     return function() {
       document.removeEventListener('gesturestart',  preventGesture);
       document.removeEventListener('gesturechange', preventGesture);
       document.removeEventListener('gestureend',    preventGesture);
       document.removeEventListener('touchmove',     preventPinch);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', onViewportResize);
-      } else {
-        window.removeEventListener('resize', onViewportResize);
-      }
+      document.removeEventListener('focusin',  onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
     };
   }, []);
 
