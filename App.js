@@ -66,6 +66,11 @@ function App() {
   var rankData = s8[0];
   var setRankData = s8[1];
 
+  // Web: キーボード表示中はタブバーを隠す
+  var s9 = useState(false);
+  var webKbVisible = s9[0];
+  var setWebKbVisible = s9[1];
+
   // Web専用: ズーム禁止 + タブバー固定 + フォーカスリング除去
   useEffect(function() {
     if (Platform.OS !== 'web') return;
@@ -96,11 +101,28 @@ function App() {
     document.addEventListener('gestureend',    preventGesture, { passive: false });
     document.addEventListener('touchmove',     preventPinch,   { passive: false });
 
+    // キーボード表示検知 → タブバーを隠す
+    var baseHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    function onViewportResize() {
+      var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      setWebKbVisible(h < baseHeight * 0.85);
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onViewportResize);
+    } else {
+      window.addEventListener('resize', onViewportResize);
+    }
+
     return function() {
       document.removeEventListener('gesturestart',  preventGesture);
       document.removeEventListener('gesturechange', preventGesture);
       document.removeEventListener('gestureend',    preventGesture);
       document.removeEventListener('touchmove',     preventPinch);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', onViewportResize);
+      } else {
+        window.removeEventListener('resize', onViewportResize);
+      }
     };
   }, []);
 
@@ -221,7 +243,7 @@ function App() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <View style={styles.body}>{screen}</View>
-      <View style={styles.tabBar}>
+      {!webKbVisible && <View style={styles.tabBar}>
         {TABS.map(function(tab) {
           var isActive = activeTabVal === tab.key;
           return (
@@ -242,7 +264,7 @@ function App() {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </View>}
     </View>
     </SafeAreaProvider>
   );
