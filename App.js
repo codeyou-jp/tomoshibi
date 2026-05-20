@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react-native';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -65,6 +65,38 @@ function App() {
   var setStats = s7[1];
   var rankData = s8[0];
   var setRankData = s8[1];
+
+  // Web専用: ズーム禁止 + タブバーがキーボードで上がらないように
+  useEffect(function() {
+    if (Platform.OS !== 'web') return;
+
+    // viewport zoom無効化
+    var meta = document.querySelector('meta[name="viewport"]');
+    if (meta) {
+      meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+    }
+
+    // iOSのピンチズーム無効化（gestureイベント）
+    function preventGesture(e) { e.preventDefault(); }
+    function preventPinch(e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }
+    document.addEventListener('gesturestart',  preventGesture, { passive: false });
+    document.addEventListener('gesturechange', preventGesture, { passive: false });
+    document.addEventListener('gestureend',    preventGesture, { passive: false });
+    document.addEventListener('touchmove',     preventPinch,   { passive: false });
+
+    // #root を position:fixed に → タブバーがキーボードで押し上げられない
+    var root = document.getElementById('root');
+    if (root) {
+      root.style.cssText += ';position:fixed!important;top:0;left:0;right:0;bottom:0;height:auto!important';
+    }
+
+    return function() {
+      document.removeEventListener('gesturestart',  preventGesture);
+      document.removeEventListener('gesturechange', preventGesture);
+      document.removeEventListener('gestureend',    preventGesture);
+      document.removeEventListener('touchmove',     preventPinch);
+    };
+  }, []);
 
   // 起動時にAsyncStorageから一括ロード
   useEffect(function() {
