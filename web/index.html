@@ -31,11 +31,23 @@
       }
       /* 100dvh = キーボードが出ても動的に追従する高さ */
       #root {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         display: flex;
-        height: 100dvh;
-        flex: 1;
       }
     </style>
+  <script>
+    // iOS Safari は user-scalable=no を無視するので JS で防ぐ
+    document.addEventListener('gesturestart',  function(e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gestureend',    function(e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches.length > 1) { e.preventDefault(); }
+    }, { passive: false });
+  </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

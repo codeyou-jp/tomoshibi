@@ -28,7 +28,7 @@ var MSGS_BASIC_MID = [
 ];
 // [2] 基礎全完了（CHALLENGEが解放される瞬間）
 var MSGS_BASIC_COMPLETE = [
-  '基礎、全部クリア。\nここからが本番だ🔥',
+  '基礎、全部クリア。\nここからが本番だ。',
   '土台が完成した。\nCHALLENGEが解放されたよ。',
   '6個やりきった。\n続けてきたから、ここにいる。',
   '基礎を制した。\nさあ、一段上へ。',
@@ -43,7 +43,7 @@ var MSGS_CHALLENGE_MID = [
 // [4] CHALLENGE全完了（今日の締め）
 var MSGS_CHALLENGE_COMPLETE = [
   '全部やった。\n今日の自分、最高だよ。',
-  '基礎からCHALLENGEまで全制覇。\n{streak}日目もやりきった。',
+  'CHALLENGEまで全制覇。\n{streak}日目もやりきった。',
   'これが習慣になった日、\n夢が現実に変わり始める。',
   '今日のあなたは、\n昨日のあなたを超えた。',
 ];
@@ -466,7 +466,6 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   var [isGenerating, setIsGenerating] = useState(!cachedRoadmap);
   var [showRoadmap, setShowRoadmap] = useState(false);
   var [chatInput, setChatInput] = useState('');
-  var [chatInputHeight, setChatInputHeight] = useState(44);
   var [chatHistory, setChatHistory] = useState([]);
   var [isChatLoading, setIsChatLoading] = useState(false);
   var [celebrated, setCelebrated] = useState(false);
@@ -717,7 +716,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
         </View>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
           {/* ── Progress ── */}
@@ -860,13 +859,9 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
         {/* ── Input ── */}
         <View style={s.inputRow}>
           <TextInput
-            style={[s.input, { height: chatInputHeight }]}
+            style={[s.input, { height: Math.min(Math.max(44, ((chatInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]}
             value={chatInput}
             onChangeText={setChatInput}
-            onContentSizeChange={function(e) {
-              var h = e.nativeEvent.contentSize.height;
-              setChatInputHeight(Math.min(Math.max(44, h + 4), 120));
-            }}
             placeholder="ロードマップやTodoを相談..."
             placeholderTextColor={GRAY2}
             multiline
@@ -961,8 +956,8 @@ var s = StyleSheet.create({
 
   // Input
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, paddingBottom: 24, gap: 10, backgroundColor: '#FFFFFF', borderTopWidth: 0.5, borderTopColor: SEP },
-  input:    { flex: 1, backgroundColor: '#F4F4F4', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: BLACK, fontSize: 15, minHeight: 44, maxHeight: 120 },
-  sendBtn:  { width: 44, height: 44, borderRadius: 22, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center' },
+  input:    { flex: 1, backgroundColor: '#F4F4F4', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: BLACK, fontSize: 15, minHeight: 44, maxHeight: 120, outlineWidth: 0 },
+  sendBtn:  { width: 44, height: 44, borderRadius: 22, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   sendOff:  { opacity: 0.3 },
 
   // 変動報酬トースト

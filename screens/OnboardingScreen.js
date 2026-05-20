@@ -740,7 +740,7 @@ export default function OnboardingScreen(props) {
 
         {showDream && (
           <View style={s.inputRow}>
-            <TextInput style={s.input} value={dreamInput} onChangeText={setDreamInput} placeholder="夢を話してみて..." placeholderTextColor={C.textMuted} multiline />
+            <TextInput style={[s.input, { height: Math.min(Math.max(44, ((dreamInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]} value={dreamInput} onChangeText={setDreamInput} placeholder="夢を話してみて..." placeholderTextColor={C.textMuted} multiline />
             <TouchableOpacity style={[s.sendBtn, !dreamInput.trim() && s.sendOff]} onPress={handleDreamSubmit} disabled={!dreamInput.trim()}>
               <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
@@ -749,7 +749,7 @@ export default function OnboardingScreen(props) {
 
         {showPassion && (
           <View style={s.inputRow}>
-            <TextInput style={s.input} value={passionInput} onChangeText={setPassionInput} placeholder="好きなこと・ハマってること..." placeholderTextColor={C.textMuted} multiline />
+            <TextInput style={[s.input, { height: Math.min(Math.max(44, ((passionInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]} value={passionInput} onChangeText={setPassionInput} placeholder="好きなこと・ハマってること..." placeholderTextColor={C.textMuted} multiline />
             <TouchableOpacity style={[s.sendBtn, !passionInput.trim() && s.sendOff]} onPress={handlePassionSubmit} disabled={!passionInput.trim()}>
               <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
@@ -758,7 +758,7 @@ export default function OnboardingScreen(props) {
 
         {showWhy && (
           <View style={s.inputRow}>
-            <TextInput style={s.input} value={whyInput} onChangeText={setWhyInput} placeholder="素直に話してみて..." placeholderTextColor={C.textMuted} multiline />
+            <TextInput style={[s.input, { height: Math.min(Math.max(44, ((whyInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]} value={whyInput} onChangeText={setWhyInput} placeholder="素直に話してみて..." placeholderTextColor={C.textMuted} multiline />
             <TouchableOpacity style={[s.sendBtn, !whyInput.trim() && s.sendOff]} onPress={handleWhySubmit} disabled={!whyInput.trim()}>
               <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
@@ -767,7 +767,7 @@ export default function OnboardingScreen(props) {
 
         {showVision && (
           <View style={s.inputRow}>
-            <TextInput style={s.input} value={visionInput} onChangeText={setVisionInput} placeholder="なりたい自分を話してみて..." placeholderTextColor={C.textMuted} multiline />
+            <TextInput style={[s.input, { height: Math.min(Math.max(44, ((visionInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]} value={visionInput} onChangeText={setVisionInput} placeholder="なりたい自分を話してみて..." placeholderTextColor={C.textMuted} multiline />
             <TouchableOpacity style={[s.sendBtn, !visionInput.trim() && s.sendOff]} onPress={handleVisionSubmit} disabled={!visionInput.trim()}>
               <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
@@ -776,7 +776,7 @@ export default function OnboardingScreen(props) {
 
         {showFeedback && (
           <View style={s.inputRow}>
-            <TextInput style={s.input} value={modelFeedbackInput} onChangeText={setModelFeedbackInput} placeholder="なんか違う気がして... など感覚でOK" placeholderTextColor={C.textMuted} multiline />
+            <TextInput style={[s.input, { height: Math.min(Math.max(44, ((modelFeedbackInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]} value={modelFeedbackInput} onChangeText={setModelFeedbackInput} placeholder="なんか違う気がして... など感覚でOK" placeholderTextColor={C.textMuted} multiline />
             <TouchableOpacity style={[s.sendBtn, !modelFeedbackInput.trim() && s.sendOff]} onPress={handleModelFeedbackSubmit} disabled={!modelFeedbackInput.trim()}>
               <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
