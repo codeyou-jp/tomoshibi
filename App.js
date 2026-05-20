@@ -66,9 +66,21 @@ function App() {
   var rankData = s8[0];
   var setRankData = s8[1];
 
-  // Web専用: ズーム禁止 + タブバーがキーボードで上がらないように
+  // Web専用: ズーム禁止 + タブバー固定 + フォーカスリング除去
   useEffect(function() {
     if (Platform.OS !== 'web') return;
+
+    // <style>タグでCSS injection（!importantでReactの再レンダリングに負けない）
+    var style = document.createElement('style');
+    style.textContent = [
+      // #rootをfixedに固定 → キーボードが出てもタブバーが上がらない
+      '#root { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; height: auto !important; overflow: hidden !important; max-width: 100vw !important; }',
+      // 入力欄の青いフォーカスリングを消す
+      'input, textarea { outline: none !important; -webkit-tap-highlight-color: transparent !important; }',
+      // 横スクロール・はみ出し防止
+      'html, body { overflow: hidden !important; max-width: 100vw !important; overscroll-behavior: none !important; }',
+    ].join('\n');
+    document.head.appendChild(style);
 
     // viewport zoom無効化
     var meta = document.querySelector('meta[name="viewport"]');
@@ -83,12 +95,6 @@ function App() {
     document.addEventListener('gesturechange', preventGesture, { passive: false });
     document.addEventListener('gestureend',    preventGesture, { passive: false });
     document.addEventListener('touchmove',     preventPinch,   { passive: false });
-
-    // #root を position:fixed に → タブバーがキーボードで押し上げられない
-    var root = document.getElementById('root');
-    if (root) {
-      root.style.cssText += ';position:fixed!important;top:0;left:0;right:0;bottom:0;height:auto!important';
-    }
 
     return function() {
       document.removeEventListener('gesturestart',  preventGesture);
