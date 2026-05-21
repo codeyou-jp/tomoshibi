@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 Sentry.init({
   dsn: 'https://ce322c9f6c91f82d23214cd19405f2f7@o4511414398156800.ingest.us.sentry.io/4511414416048128',
@@ -40,7 +40,10 @@ var TABS = [
   { key: 'profile', label: '自分',     icon: 'person-circle',       iconOff: 'person-circle-outline' },
 ];
 
-function App() {
+// ── AppContent: SafeAreaProvider の内側で動くメインコンポーネント ─────────────
+function AppContent() {
+  var insets = useSafeAreaInsets();
+
   var s1 = useState(null);
   var s2 = useState('dream');
   var s3 = useState(0);
@@ -48,7 +51,7 @@ function App() {
   var s5 = useState(null);
   var s6 = useState(true);
   var s7 = useState({ totalTasksDone: 0, joinDate: Date.now(), daysActive: [] });
-  var s8 = useState({ passedTests: {}, testShownFor: {} }); // ランクデータ
+  var s8 = useState({ passedTests: {}, testShownFor: {} });
   var userDataVal = s1[0];
   var setUserData = s1[1];
   var activeTabVal = s2[0];
@@ -75,25 +78,19 @@ function App() {
   useEffect(function() {
     if (Platform.OS !== 'web') return;
 
-    // <style>タグでCSS injection（!importantでReactの再レンダリングに負けない）
     var style = document.createElement('style');
     style.textContent = [
-      // #rootをfixedに固定 → キーボードが出てもタブバーが上がらない
       '#root { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; height: auto !important; overflow: hidden !important; max-width: 100vw !important; }',
-      // 入力欄の青いフォーカスリングを消す
       'input, textarea { outline: none !important; -webkit-tap-highlight-color: transparent !important; }',
-      // 横スクロール・はみ出し防止
       'html, body { overflow: hidden !important; max-width: 100vw !important; overscroll-behavior: none !important; }',
     ].join('\n');
     document.head.appendChild(style);
 
-    // viewport zoom無効化
     var meta = document.querySelector('meta[name="viewport"]');
     if (meta) {
       meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
     }
 
-    // iOSのピンチズーム無効化（gestureイベント）
     function preventGesture(e) { e.preventDefault(); }
     function preventPinch(e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }
     document.addEventListener('gesturestart',  preventGesture, { passive: false });
@@ -101,7 +98,6 @@ function App() {
     document.addEventListener('gestureend',    preventGesture, { passive: false });
     document.addEventListener('touchmove',     preventPinch,   { passive: false });
 
-    // 入力欄フォーカス時にタブバーを隠す（キーボードアニメーション前に発火）
     function onFocusIn(e) {
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
         setWebKbVisible(true);
@@ -170,40 +166,31 @@ function App() {
   }
 
   if (isBooting) {
-    return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
-      </SafeAreaProvider>
-    );
+    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
   }
 
   if (!userDataVal) {
     return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1 }}>
-          <StatusBar style="light" />
-          <OnboardingScreen onComplete={function(data) {
-            setUserData(data);
-            // オンボーディング完了後にデイリーリマインダーをセットアップ
-            setupDailyReminder();
-          }} />
-        </View>
-      </SafeAreaProvider>
+      <View style={{ flex: 1 }}>
+        <StatusBar style="light" />
+        <OnboardingScreen onComplete={function(data) {
+          setUserData(data);
+          setupDailyReminder();
+        }} />
+      </View>
     );
   }
 
   if (dmFriend) {
     return (
-      <SafeAreaProvider>
-        <View style={styles.root}>
-          <StatusBar style="light" />
-          {React.createElement(DMScreen, {
-            friend: dmFriend,
-            userData: userDataVal,
-            onBack: function() { setDmFriend(null); }
-          })}
-        </View>
-      </SafeAreaProvider>
+      <View style={styles.root}>
+        <StatusBar style="light" />
+        {React.createElement(DMScreen, {
+          friend: dmFriend,
+          userData: userDataVal,
+          onBack: function() { setDmFriend(null); }
+        })}
+      </View>
     );
   }
 
@@ -220,6 +207,7 @@ function App() {
       onTaskComplete: handleTaskComplete,
       rankData: rankData,
       onRankUpdate: setRankData,
+      onOpenCoach: function() { setActiveTab('coach'); },  // ← コーチタブに飛ぶ
     });
   } else if (activeTabVal === 'friends') {
     screen = React.createElement(FriendsScreen, {
@@ -237,34 +225,46 @@ function App() {
     });
   }
 
+  // safe area: ホームバーがあるデバイスはinsets.bottom、ないデバイスは最低8px
+  var tabBarPaddingBottom = Math.max(insets.bottom, 8);
+
   return (
-    <SafeAreaProvider>
     <View style={styles.root}>
       <StatusBar style="dark" />
       <View style={styles.body}>{screen}</View>
-      {!webKbVisible && <View style={styles.tabBar}>
-        {TABS.map(function(tab) {
-          var isActive = activeTabVal === tab.key;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={styles.tabBtn}
-              onPress={function() { setActiveTab(tab.key); }}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name={isActive ? tab.icon : tab.iconOff}
-                size={26}
-                color={isActive ? '#000000' : MUTED}
-              />
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>}
+      {!webKbVisible && (
+        <View style={[styles.tabBar, { paddingBottom: tabBarPaddingBottom }]}>
+          {TABS.map(function(tab) {
+            var isActive = activeTabVal === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.tabBtn}
+                onPress={function() { setActiveTab(tab.key); }}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={isActive ? tab.icon : tab.iconOff}
+                  size={26}
+                  color={isActive ? '#000000' : MUTED}
+                />
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
+  );
+}
+
+// ── App: SafeAreaProvider でラップするだけ ────────────────────────────────────
+function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
     </SafeAreaProvider>
   );
 }
@@ -278,7 +278,7 @@ var styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: BORDER,
     paddingTop: 8,
-    paddingBottom: 20,
+    // paddingBottom は動的に tabBarPaddingBottom で上書き
   },
   tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingVertical: 4 },
   tabLabel: { fontSize: 10, color: MUTED, fontWeight: '500', marginTop: 1 },

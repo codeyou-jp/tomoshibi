@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
-  TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Animated,
+  KeyboardAvoidingView, Platform, Animated, LayoutAnimation, UIManager,
 } from 'react-native';
+
+// Android で LayoutAnimation を有効化
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RANKS, RANK_TEST_QUESTIONS, getRankFromStreak } from '../constants/data';
 
@@ -224,27 +230,7 @@ async function generateRoadmap(userData, streak) {
   return JSON.parse(match[0]);
 }
 
-async function updateWithChat(userMsg, roadmap, chatHistory, userData) {
-  var history = chatHistory.filter(function(m) { return m.role !== 'loading'; }).map(function(m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.text }; });
-
-  // systemOverride でバックエンドのシステムプロンプトを上書きし、REPLY:/JSON: 形式を強制
-  var systemOverride = 'あなたはTodoリストを一緒に考えるAIアシスタントです。ユーザーの夢に寄り添いながら、ロードマップとTodoリストを更新します。\n\nユーザーの夢: ' + (userData.dream || '') + '\n\n現在のロードマップ：\n' + JSON.stringify(roadmap, null, 2) + '\n\n【返答ルール】\n- ユーザーの気持ちに共感し、フレンドリーな日本語で話す\n- 必ず以下のフォーマットで返すこと（他の形式は不可）:\n\nREPLY: （ユーザーへの一言。共感・励まし。1〜2文、絵文字1個まで）\nJSON: （ロードマップ全体のJSON。life/years10/years5/year1/months6/months3/month1/weeks2/week1/easy(3個)/necessary(3個)/advanced(4個)を必ず含む）\n\n※JSON以外の余計な説明は不要。フォーマット厳守。';
-
-  var messages = history.concat([{ role: 'user', content: userMsg }]);
-  var res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: messages, userData: userData, systemOverride: systemOverride }) });
-  var data = await res.json();
-  var text = (data && data.text) || '';
-  var replyMatch = text.match(/REPLY:\s*(.+?)(?=JSON:|$)/s);
-  var jsonMatch = text.match(/JSON:\s*(\{[\s\S]*\})/);
-  var reply = replyMatch ? replyMatch[1].trim() : '';
-  // replyが空の場合はtextからJSONを除いた部分を使う
-  if (!reply && text) {
-    reply = text.replace(/JSON:\s*\{[\s\S]*\}/, '').replace(/REPLY:\s*/, '').trim().slice(0, 80) || 'ロードマップを更新したよ！';
-  }
-  var newRoadmap = roadmap;
-  if (jsonMatch) { try { newRoadmap = JSON.parse(jsonMatch[1]); } catch (e) {} }
-  return { reply: reply, roadmap: newRoadmap };
-}
+// updateWithChat は CoachScreen に移管済み。TodoScreen では使用しない。
 
 // ─── 段階突破試験モーダル ─────────────────────────────────────────────────────
 function BreakthroughTestModal({ visible, rankKey, streak, userData, onPass, onClose }) {
@@ -459,19 +445,18 @@ function useResetCountdown() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoadmap, onRoadmapGenerated, onTaskComplete, rankData, onRankUpdate }) {
+export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoadmap, onRoadmapGenerated, onTaskComplete, rankData, onRankUpdate, onOpenCoach }) {
   var insets = useSafeAreaInsets();
   var [roadmap, setRoadmap] = useState(cachedRoadmap || null);
   var [checked, setChecked] = useState({});
   var [isGenerating, setIsGenerating] = useState(!cachedRoadmap);
   var [showRoadmap, setShowRoadmap] = useState(false);
-  var [chatInput, setChatInput] = useState('');
-  var [chatHistory, setChatHistory] = useState([]);
-  var [isChatLoading, setIsChatLoading] = useState(false);
   var [celebrated, setCelebrated] = useState(false);
   var [rewardMsg, setRewardMsg] = useState('');
   var [showReward, setShowReward] = useState(false);
-  var [breakthroughRankKey, setBreakthroughRankKey] = useState(null); // 試験対象ランク
+  var [breakthroughRankKey, setBreakthroughRankKey] = useState(null);
+  // アコーディオン開閉状態: MUSTはデフォルト展開
+  var [openTiers, setOpenTiers] = useState({ easy: true, necessary: false, advanced: false });
   var countdown = useResetCountdown();
 
   // 現在のランク
@@ -490,7 +475,6 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   });
 
   var pulseAnim = useRef(new Animated.Value(1)).current;
-  var scrollRef = useRef(null);
 
   // ─── 段階突破試験トリガー ───────────────────────────────────────────────────
   // RANKS の testAt (7, 30, 90, 180) をstreakが踏んだら試験モーダルを出す
@@ -550,8 +534,10 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
   ) : [];
 
   // 基礎（MUST+SHOULD）とCHALLENGEを分ける
+  var easyTodos      = allTodos.filter(function(t) { return t.tier === 'easy'; });
   var basicTodos     = allTodos.filter(function(t) { return t.tier !== 'advanced'; });
   var challengeTodos = allTodos.filter(function(t) { return t.tier === 'advanced'; });
+  var easyAllDone    = easyTodos.length > 0 && easyTodos.every(function(t) { return !!checked[t.id]; });
   var basicDoneCount = basicTodos.filter(function(t) { return !!checked[t.id]; }).length;
   var basicAllDone   = basicTodos.length > 0 && basicDoneCount === basicTodos.length;
 
@@ -562,11 +548,29 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
 
   var SPANS = isGoalType(userData.dream) ? SPANS_GOAL : SPANS_DREAM;
 
+  // MUST全完了 → SHOULDを自動展開
+  useEffect(function() {
+    if (easyAllDone && !openTiers.necessary) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setOpenTiers(function(prev) { return Object.assign({}, prev, { necessary: true }); });
+    }
+  }, [easyAllDone]);
+
+  // 基礎全完了 → CHALLENGEを自動展開
+  useEffect(function() {
+    if (basicAllDone && !openTiers.advanced) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setOpenTiers(function(prev) { return Object.assign({}, prev, { advanced: true }); });
+    }
+  }, [basicAllDone]);
+
   // ストリーク更新
   useEffect(function() {
     if (hit75 && !celebrated && allTodos.length > 0) {
       setCelebrated(true);
       onStreakUpdate(function(s) { return s + 1; });
+      // ストリーク達成: 成功ハプティクス
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(function() {});
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.04, duration: 150, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1,    duration: 150, useNativeDriver: true }),
@@ -582,6 +586,11 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
     newChecked[item.id] = !wasChecked;
     setChecked(newChecked);
     if (!wasChecked && onTaskComplete) onTaskComplete(1);
+
+    // ハプティクス: チェック時は軽い感触、チェック外しはなし
+    if (!wasChecked) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(function() {});
+    }
     if (wasChecked) return; // チェックを外したときはメッセージ出さない
 
     // 新しい状態で基礎・CHALLENGEの完了数を計算
@@ -633,29 +642,6 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
       return;
     }
   }
-
-  // チャット
-  var sendChat = async function() {
-    var msg = chatInput.trim();
-    if (!msg || isChatLoading || !roadmap) return;
-    setChatInput('');
-    var newHistory = chatHistory.concat([{ role: 'user', text: msg }]);
-    setChatHistory(newHistory.concat([{ role: 'loading', text: '...' }]));
-    setIsChatLoading(true);
-    setTimeout(function() { if (scrollRef.current) scrollRef.current.scrollToEnd({ animated: true }); }, 100);
-    try {
-      var result = await updateWithChat(msg, roadmap, newHistory, userData);
-      setRoadmap(result.roadmap); // これがrewardState初期化のuseEffectも発火する
-      if (onRoadmapGenerated) onRoadmapGenerated(result.roadmap);
-      setChecked({});
-      setChatHistory(newHistory.concat([{ role: 'bot', text: result.reply }]));
-    } catch (e) {
-      setChatHistory(newHistory.concat([{ role: 'bot', text: '少し調子が悪いみたい。もう一度試してみて！' }]));
-    } finally {
-      setIsChatLoading(false);
-      setTimeout(function() { if (scrollRef.current) scrollRef.current.scrollToEnd({ animated: true }); }, 150);
-    }
-  };
 
   // ── Loading ──
   if (isGenerating) {
@@ -717,7 +703,7 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
           {/* ── Progress ── */}
           <Animated.View style={[s.progressSection, { transform: [{ scale: pulseAnim }] }]}>
@@ -765,48 +751,58 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
 
           <View style={s.sep} />
 
-          {/* ── Todos ── */}
+          {/* ── Todos (アコーディオン) ── */}
           {TIERS.map(function(tier) {
             var items = allTodos.filter(function(t) { return t.tier === tier.key; });
             var isChallenge = tier.key === 'advanced';
             var isLocked = isChallenge && !basicAllDone;
+            var isOpen = !!openTiers[tier.key];
+            var doneCount = items.filter(function(t) { return !!checked[t.id]; }).length;
 
             return (
               <View key={tier.key}>
-                <View style={s.section}>
-
-                  {/* ティアヘッダー */}
-                  <View style={s.tierHead}>
-                    <View style={[s.tierPill, { backgroundColor: tier.color + '18' }]}>
-                      <Text style={[s.tierLabel, { color: tier.color }]}>{tier.label}</Text>
-                    </View>
-                    <Text style={s.tierDesc}>{tier.desc}</Text>
-                    {isLocked && (
+                {/* ── アコーディオンヘッダー ── */}
+                <TouchableOpacity
+                  style={s.accordionHead}
+                  onPress={function() {
+                    if (isLocked) return;
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(function() {});
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setOpenTiers(function(prev) {
+                      return Object.assign({}, prev, { [tier.key]: !prev[tier.key] });
+                    });
+                  }}
+                  activeOpacity={isLocked ? 1 : 0.7}
+                >
+                  <View style={[s.tierPill, { backgroundColor: tier.color + '18' }]}>
+                    <Text style={[s.tierLabel, { color: tier.color }]}>{tier.label}</Text>
+                  </View>
+                  <Text style={s.tierDesc}>{tier.desc}</Text>
+                  <View style={s.accordionRight}>
+                    {isLocked ? (
                       <View style={s.lockBadge}>
                         <Ionicons name="lock-closed" size={11} color={GRAY2} />
                         <Text style={s.lockBadgeTxt}>基礎クリアで解放</Text>
                       </View>
+                    ) : (
+                      <>
+                        <Text style={[s.doneCount, doneCount === items.length && { color: GREEN }]}>
+                          {doneCount}/{items.length}
+                        </Text>
+                        <Ionicons
+                          name={isOpen ? 'chevron-up' : 'chevron-down'}
+                          size={16}
+                          color={GRAY2}
+                        />
+                      </>
                     )}
                   </View>
+                </TouchableOpacity>
 
-                  {/* ロック中：タスクをグレーアウト表示（中身は見える） */}
-                  {isLocked ? (
-                    items.map(function(item, idx) {
-                      return (
-                        <View key={item.id} style={{ opacity: 0.3 }}>
-                          <View style={s.todoRow}>
-                            <View style={[s.check, { borderColor: '#D0D0D0' }]}>
-                              <Ionicons name="lock-closed" size={9} color={GRAY2} />
-                            </View>
-                            <Text style={[s.todoText, { color: GRAY1 }]}>{item.text}</Text>
-                          </View>
-                          {idx < items.length - 1 && <View style={s.rowSep} />}
-                        </View>
-                      );
-                    })
-                  ) : (
-                    /* 解放中：通常インタラクティブ表示 */
-                    items.map(function(item, idx) {
+                {/* ── アコーディオン本体 ── */}
+                {isOpen && !isLocked && (
+                  <View style={s.accordionBody}>
+                    {items.map(function(item, idx) {
                       var isDone = !!checked[item.id];
                       return (
                         <View key={item.id}>
@@ -821,63 +817,33 @@ export default function TodoScreen({ userData, streak, onStreakUpdate, cachedRoa
                           {idx < items.length - 1 && <View style={s.rowSep} />}
                         </View>
                       );
-                    })
-                  )}
-                </View>
+                    })}
+                  </View>
+                )}
+
                 <View style={s.sep} />
               </View>
             );
           })}
 
-          {/* ── Chat history ── */}
-          {chatHistory.length > 0 && (
-            <View style={s.section}>
-              <Text style={s.sectionTitle}>AIとの会話</Text>
-              <View style={{ gap: 8, marginTop: 8 }}>
-                {chatHistory.map(function(m, i) {
-                  if (m.loading) return (
-                    <View key={i} style={s.bubbleBot}><ActivityIndicator size="small" color={GRAY2} /></View>
-                  );
-                  return (
-                    <View key={i} style={m.role === 'user' ? s.bubbleUser : s.bubbleBot}>
-                      <Text style={m.role === 'user' ? s.bubbleUserTxt : s.bubbleBotTxt}>{m.text}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-          {chatHistory.length === 0 && (
-            <View style={s.section}>
-              <Text style={s.hintTxt}>AIに「今日のTodoを変えたい」「今週の目標を修正して」と話しかけてみよう</Text>
-            </View>
-          )}
+          {/* ── コーチに相談ボタン ── */}
+          <View style={s.coachBtnSection}>
+            <TouchableOpacity
+              style={s.coachBtn}
+              onPress={function() {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(function() {});
+                if (onOpenCoach) onOpenCoach();
+              }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="chatbubble-ellipses" size={18} color="#FFFFFF" />
+              <Text style={s.coachBtnTxt}>AIコーチに相談する</Text>
+            </TouchableOpacity>
+            <Text style={s.coachBtnHint}>Todoの変更・悩みはコーチタブへ</Text>
+          </View>
 
           <View style={{ height: 20 }} />
         </ScrollView>
-
-        {/* ── Input ── */}
-        <View style={s.inputRow}>
-          <TextInput
-            style={[s.input, { height: Math.min(Math.max(44, ((chatInput.match(/\n/g) || []).length + 1) * 24 + 20), 120) }]}
-            value={chatInput}
-            onChangeText={setChatInput}
-            placeholder="ロードマップやTodoを相談..."
-            placeholderTextColor={GRAY2}
-            multiline
-            editable={!isChatLoading}
-          />
-          <TouchableOpacity
-            style={[s.sendBtn, (!chatInput.trim() || isChatLoading) && s.sendOff]}
-            onPress={sendChat}
-            disabled={!chatInput.trim() || isChatLoading}
-          >
-            {isChatLoading
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Ionicons name="arrow-up" size={18} color="#fff" />
-            }
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
 
       {/* ── 変動報酬トースト ── */}
@@ -932,8 +898,16 @@ var s = StyleSheet.create({
   spanLabel:{ fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginBottom: 2, textTransform: 'uppercase' },
   spanText: { fontSize: 13, color: GRAY1, lineHeight: 19 },
 
+  // Accordion
+  accordionHead: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 20, paddingVertical: 14,
+  },
+  accordionRight: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' },
+  accordionBody:  { paddingHorizontal: 20, paddingBottom: 4 },
+  doneCount:      { fontSize: 12, fontWeight: '700', color: GRAY2 },
+
   // Tiers
-  tierHead:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   tierPill:     { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   tierLabel:    { fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
   tierDesc:     { fontSize: 12, color: GRAY2, flex: 1 },
@@ -947,18 +921,18 @@ var s = StyleSheet.create({
   todoText:    { flex: 1, fontSize: 14, color: BLACK, lineHeight: 20 },
   todoTextDone:{ textDecorationLine: 'line-through', color: GRAY2 },
 
-  // Chat
-  bubbleBot:    { alignSelf: 'flex-start', backgroundColor: '#F4F4F4', borderRadius: 18, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '88%' },
-  bubbleUser:   { alignSelf: 'flex-end', backgroundColor: BLACK, borderRadius: 18, borderBottomRightRadius: 4, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '88%' },
-  bubbleBotTxt: { color: BLACK, fontSize: 13, lineHeight: 20 },
-  bubbleUserTxt:{ color: '#fff', fontSize: 13, lineHeight: 20 },
-  hintTxt:      { fontSize: 12, color: GRAY2, lineHeight: 18 },
-
-  // Input
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, paddingBottom: 24, gap: 10, backgroundColor: '#FFFFFF', borderTopWidth: 0.5, borderTopColor: SEP },
-  input:    { flex: 1, backgroundColor: '#F4F4F4', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: BLACK, fontSize: 15, minHeight: 44, maxHeight: 120, outlineWidth: 0 },
-  sendBtn:  { width: 44, height: 44, borderRadius: 22, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  sendOff:  { opacity: 0.3 },
+  // コーチに相談ボタン
+  coachBtnSection: { paddingHorizontal: 20, paddingVertical: 20, alignItems: 'center', gap: 8 },
+  coachBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: ORANGE, borderRadius: 14,
+    paddingVertical: 14, paddingHorizontal: 24,
+    width: '100%', justifyContent: 'center',
+    shadowColor: ORANGE, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+  },
+  coachBtnTxt:  { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: -0.2 },
+  coachBtnHint: { fontSize: 11, color: GRAY2, fontWeight: '500' },
 
   // 変動報酬トースト
   toastWrap: { position: 'absolute', bottom: 90, left: 16, right: 16, zIndex: 1000 },

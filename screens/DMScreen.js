@@ -69,9 +69,6 @@ export default function DMScreen(props) {
   var inputText  = si[0];
   var setInputText = si[1];
 
-  var sh = React.useState(44);
-  var inputHeight  = sh[0];
-  var setInputHeight = sh[1];
 
   var flatRef = React.useRef(null);
 
@@ -172,13 +169,9 @@ export default function DMScreen(props) {
       // ── Input bar ──
       React.createElement(View, { style: s.inputBar },
         React.createElement(TextInput, {
-          style: [s.input, { height: inputHeight }],
+          style: [s.input, { height: Math.min(Math.max(44, ((inputText.match(/\n/g) || []).length + 1) * 24 + 20), 120) }],
           value: inputText,
           onChangeText: setInputText,
-          onContentSizeChange: function(e) {
-            var h = e.nativeEvent.contentSize.height;
-            setInputHeight(Math.min(Math.max(44, h + 4), 120));
-          },
           placeholder: 'メッセージを入力...',
           placeholderTextColor: MUTED,
           multiline: true,
